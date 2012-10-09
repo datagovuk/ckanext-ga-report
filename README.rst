@@ -72,7 +72,7 @@ Before you can access the data, you need to set up the OAUTH details which you c
 
 Once you have set up your credentials.json file you can generate an oauth token file by using the
 following command, which will store your oauth token in a file called token.dat once you have finished
-giving permission in the browser.
+giving permission in the browser::
 
     $ paster getauthtoken --config=../ckan/development.ini
 
