@@ -15,6 +15,10 @@ sdist
 develop-eggs
 .installed.cfg
 
+# Private info
+credentials.json
+token.dat
+
 # Installer logs
 pip-log.txt
 

@@ -4,7 +4,8 @@ import datetime
 from pylons import config
 
 import ga_model
-from ga_client import GA
+
+#from ga_client import GA
 
 log = logging.getLogger('ckanext.ga-report')
 
@@ -12,12 +13,16 @@ FORMAT_MONTH = '%Y-%m'
 
 class DownloadAnalytics(object):
     '''Downloads and stores analytics info'''
-    def __init__(self):
+
+    def __init__(self, service=None, profile_id=None):
         self.period = config['ga-report.period']
-    
+        self.service = service
+        self.profile_id = profile_id
+
+
     def all_(self):
-        pass
-    
+        self.since_date(datetime.datetime(2010, 1, 1))
+
     def latest(self):
         if self.period == 'monthly':
             # from first of this month to today
@@ -49,8 +54,8 @@ class DownloadAnalytics(object):
                     break
                 elif first_of_the_month < first_of_this_month:
                     in_the_next_month = first_of_the_month + datetime.timedelta(40)
-                    last_of_the_month == datetime.datetime(in_the_next_month.year,
-                                                           in_the_next_month.month, a)\
+                    last_of_the_month = datetime.datetime(in_the_next_month.year,
+                                                           in_the_next_month.month, 1)\
                                                            - datetime.timedelta(1)
                     periods.append((now.strftime(FORMAT_MONTH), 0,
                                     first_of_the_month, last_of_the_month))
@@ -71,7 +76,7 @@ class DownloadAnalytics(object):
             return period_name + ' (up to %ith)' % period_complete_day
         else:
             return period_name
-        
+
 
     def download_and_store(self, periods):
         for period_name, period_complete_day, start_date, end_date in periods:
@@ -84,8 +89,8 @@ class DownloadAnalytics(object):
                      self.get_full_period_name(period_name, period_complete_day))
             self.store(period_name, period_complete_day, data)
 
-    @classmethod
-    def download(cls, start_date, end_date):
+
+    def download(self, start_date, end_date):
         '''Get data from GA for a given time period'''
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
@@ -93,22 +98,45 @@ class DownloadAnalytics(object):
         #query = 'ga:pagePath=~^%s,ga:pagePath=~^%s' % \
         #        (PACKAGE_URL, self.resource_url_tag)
         query = 'ga:pagePath=~^/dataset/'
+        #query = 'ga:pagePath=~^/User/'
         metrics = 'ga:uniquePageviews'
         sort = '-ga:uniquePageviews'
-        for entry in GA.ga_query(query_filter=query,
-                                 from_date=start_date,
+
+        # Supported query params at
+        # https://developers.google.com/analytics/devguides/reporting/core/v3/reference
+        results = self.service.data().ga().get(
+                                 ids='ga:' + self.profile_id,
+                                 filters=query,
+                                 start_date=start_date,
                                  metrics=metrics,
                                  sort=sort,
-                                 to_date=end_date):
-            print entry
-            import pdb; pdb.set_trace()
-            for dim in entry.dimension:
-                if dim.name == "ga:pagePath":
-                    package = dim.value
-                    count = entry.get_metric(
-                        'ga:uniquePageviews').value or 0
-                    packages[package] = int(count)
-        return packages
+                                 end_date=end_date).execute()
+        self.print_results(results)
+
+#        for entry in GA.ga_query(query_filter=query,
+#                                 from_date=start_date,
+#                                 metrics=metrics,
+#                                 sort=sort,
+#                                 to_date=end_date):
+#            print entry, type(entry)
+#            import pdb; pdb.set_trace()
+#            for dim in entry.dimension:
+#                if dim.name == "ga:pagePath":
+#                    package = dim.value
+#                    count = entry.get_metric(
+#                        'ga:uniquePageviews').value or 0
+#                    packages[package] = int(count)
+        return []
+
+    def print_results(self, results):
+        import pprint
+        pprint.pprint(results)
+        if results:
+            print 'Profile: %s' % results.get('profileInfo').get('profileName')
+            print 'Total results: %s' % results.get('totalResults')
+            print 'Total Visits: %s' % results.get('rows', [[-1]])[0][0]
+        else:
+            print 'No results found'
 
     def store(self, period_name, period_complete_day, data):
         if 'url' in data:

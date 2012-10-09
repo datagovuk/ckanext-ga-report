@@ -20,7 +20,8 @@ setup(
 	include_package_data=True,
 	zip_safe=False,
 	install_requires=[
-		'gdata'
+		'gdata',
+		'google-api-python-client'
 	],
 	entry_points=\
 	"""

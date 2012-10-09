@@ -46,12 +46,43 @@ Installation
     ckan.plugins = ga-report
 
 
+Authorization
+--------------
+
+Before you can access the data, you need to set up the OAUTH details which you can do by following the `instructions <https://developers.google.com/analytics/resources/tutorials/hello-analytics-api>`_ the outcome of which will be a file called credentials.json which should look like credentials.json.template with the relevant fields completed. These steps are below for convenience:
+
+1. Visit the `Google APIs Console <https://code.google.com/apis/console>`_
+
+2. Sign-in and create a project or use an existing project.
+
+3. In the `Services pane <https://code.google.com/apis/console#:services>`_ , activate Analytics API for your project. If prompted, read and accept the terms of service.
+
+4. Go to the `API Access pane <https://code.google.com/apis/console/#:access>`_
+
+5. Click Create an OAuth 2.0 client ID....
+
+6. Fill out the Branding Information fields and click Next.
+
+7. In Client ID Settings, set Application type to Installed application.
+
+8. Click Create client ID
+
+9. The details you need below are Client ID, Client secret, and  Redirect URIs
+
+
+Once you have set up your credentials.json file you can generate an oauth token file by using the
+following command, which will store your oauth token in a file called token.dat once you have finished
+giving permission in the browser.
+
+    $ paster getauthtoken --config=../ckan/development.ini
+
+
 Tutorial
 --------
 
-Download some GA data and store it in CKAN's db. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file)::
+Download some GA data and store it in CKAN's db. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file) and specifying the name of your auth file (token.dat by default) from the previous step::
 
-    $ paster loadanalytics latest --config=../ckan/development.ini
+    $ paster loadanalytics token.dat latest --config=../ckan/development.ini
 
 
 Software Licence
