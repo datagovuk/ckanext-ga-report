@@ -8,6 +8,10 @@ from pylons import config
 
 
 def _prepare_credentials( token_filename, credentials_filename ):
+    """
+    Either returns the user's oauth credentials or uses the credentials
+    file to generate a token (by forcing the user to login in the browser)
+    """
     storage = Storage( token_filename )
     credentials = storage.get()
 
@@ -19,7 +23,12 @@ def _prepare_credentials( token_filename, credentials_filename ):
 
     return credentials
 
-def initialize_service( token_file, credentials_file ):
+def init_service( token_file, credentials_file ):
+    """
+    Given a file containing the user's oauth token (and another with
+    credentials in case we need to generate the token) will return a
+    service object representing the analytics API.
+    """
     http = httplib2.Http()
 
     credentials = _prepare_credentials(token_file, credentials_file)
@@ -27,19 +36,23 @@ def initialize_service( token_file, credentials_file ):
 
     return build('analytics', 'v3', http=http)
 
+
 def get_profile_id(service):
-    # Get a list of all Google Analytics accounts for this user
+    """
+    Get the profile ID for this user and the service specified by the
+    'googleanalytics.id' configuration option.
+    """
     accounts = service.management().accounts().list().execute()
 
-    if accounts.get('items'):
-        firstAccountId = accounts.get('items')[0].get('id')
-        webPropertyId = config.get('googleanalytics.id')
-        profiles = service.management().profiles().list(
-                    accountId=firstAccountId,
-                    webPropertyId=webPropertyId).execute()
+    if not accounts.get('items'):
+        return None
 
-        if profiles.get('items'):
-            # return the first Profile ID
-            return profiles.get('items')[0].get('id')
+    accountId = accounts.get('items')[0].get('id')
+    webPropertyId = config.get('googleanalytics.id')
+    profiles = service.management().profiles().list(
+        accountId=accountId, webPropertyId=webPropertyId).execute()
+
+    if profiles.get('items'):
+        return profiles.get('items')[0].get('id')
 
     return None
