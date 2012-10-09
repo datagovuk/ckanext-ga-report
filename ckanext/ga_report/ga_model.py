@@ -3,20 +3,23 @@ import uuid
 
 from sqlalchemy import Table, Column, MetaData
 from sqlalchemy import types
-from sqlalchemy.sql import select, text
+from sqlalchemy.sql import select
 from sqlalchemy import func
 
 import ckan.model as model
 from ckan.model.types import JsonType
 from ckan.lib.base import *
 
+
 def make_uuid():
     return unicode(uuid.uuid4())
+
 
 def init_tables():
     metadata = MetaData()
     package_stats = Table('ga_url', metadata,
-                          Column('id', types.UnicodeText, primary_key=True, default=make_uuid),
+                          Column('id', types.UnicodeText, primary_key=True,
+                                 default=make_uuid),
                           Column('period_name', types.UnicodeText),
                           Column('period_complete_day', types.Integer),
                           Column('visits', types.Integer),
@@ -27,6 +30,7 @@ def init_tables():
 
 
 cached_tables = {}
+
 
 def get_table(name):
     if name not in cached_tables:
@@ -46,6 +50,7 @@ def _normalize_url(url):
     url = re.sub('https?://(www\.)?data.gov.uk', '', url)
     return url
 
+
 def _get_department_id_of_url(url):
     # e.g. /dataset/fuel_prices
     # e.g. /dataset/fuel_prices/resource/e63380d4
@@ -57,6 +62,7 @@ def _get_department_id_of_url(url):
             publisher_groups = dataset.get_groups('publisher')
             if publisher_groups:
                 return publisher_groups[0].id
+
 
 def update_url_stats(period_name, period_complete_day, url_data):
     table = get_table('ga_url')
@@ -71,9 +77,9 @@ def update_url_stats(period_name, period_complete_day, url_data):
         count = connection.execute(s).fetchone()
         if count and count[0]:
             # update the row
-            connection.execute(table.update()\
+            connection.execute(table.update()
                 .where(table.c.period_name == period_name,
-                       table.c.url == url)\
+                       table.c.url == url)
                 .values(period_complete_day=period_complete_day,
                         views=views,
                         department_id=department_id,
@@ -86,5 +92,5 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'views': views,
                       'department_id': department_id,
                       'next_page': next_page}
-            connection.execute(stats.insert()\
-                               .values(**values))
+            connection.execute(stats.insert().
+                values(**values))

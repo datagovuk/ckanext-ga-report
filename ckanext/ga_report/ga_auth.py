@@ -7,12 +7,12 @@ from oauth2client.tools import run
 from pylons import config
 
 
-def _prepare_credentials( token_filename, credentials_filename ):
+def _prepare_credentials(token_filename, credentials_filename):
     """
     Either returns the user's oauth credentials or uses the credentials
     file to generate a token (by forcing the user to login in the browser)
     """
-    storage = Storage( token_filename )
+    storage = Storage(token_filename)
     credentials = storage.get()
 
     if credentials is None or credentials.invalid:
@@ -23,7 +23,8 @@ def _prepare_credentials( token_filename, credentials_filename ):
 
     return credentials
 
-def init_service( token_file, credentials_file ):
+
+def init_service(token_file, credentials_file):
     """
     Given a file containing the user's oauth token (and another with
     credentials in case we need to generate the token) will return a
