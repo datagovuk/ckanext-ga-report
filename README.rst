@@ -31,6 +31,7 @@ Installation
 2. Ensure you development.ini (or similar) contains the info about your Google Analytics account and configuration::
 
       googleanalytics.id = UA-1010101-1
+      googleanalytics.account = Account name (i.e. data.gov.uk, see top level item at https://www.google.com/analytics)
       googleanalytics.username = googleaccount@gmail.com
       googleanalytics.password = googlepassword
       ga-report.period = monthly

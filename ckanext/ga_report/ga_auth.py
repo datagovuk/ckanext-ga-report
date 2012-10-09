@@ -1,3 +1,4 @@
+import os
 import httplib2
 from apiclient.discovery import build
 from oauth2client.client import flow_from_clientsecrets
@@ -41,15 +42,24 @@ def init_service(token_file, credentials_file):
 def get_profile_id(service):
     """
     Get the profile ID for this user and the service specified by the
-    'googleanalytics.id' configuration option.
+    'googleanalytics.id' configuration option. This function iterates
+    over all of the accounts available to the user who invoked the
+    service to find one where the account name matches (in case the
+    user has several).
     """
     accounts = service.management().accounts().list().execute()
 
     if not accounts.get('items'):
         return None
 
-    accountId = accounts.get('items')[0].get('id')
+    accountName = config.get('googleanalytics.account')
     webPropertyId = config.get('googleanalytics.id')
+    for acc in accounts.get('items'):
+        if acc.get('name') == accountName:
+            accountId = acc.get('id')
+
+    webproperties = service.management().webproperties().list(accountId=accountId).execute()
+
     profiles = service.management().profiles().list(
         accountId=accountId, webPropertyId=webPropertyId).execute()
 

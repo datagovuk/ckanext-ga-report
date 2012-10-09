@@ -97,8 +97,7 @@ class DownloadAnalytics(object):
         # url
         #query = 'ga:pagePath=~^%s,ga:pagePath=~^%s' % \
         #        (PACKAGE_URL, self.resource_url_tag)
-        query = 'ga:pagePath=~^/dataset/'
-        #query = 'ga:pagePath=~^/User/'
+        query = 'ga:pagePath=~/dataset/[a-z0-9-]+$'
         metrics = 'ga:uniquePageviews'
         sort = '-ga:uniquePageviews'
 
@@ -110,30 +109,25 @@ class DownloadAnalytics(object):
                                  start_date=start_date,
                                  metrics=metrics,
                                  sort=sort,
+                                 dimensions="ga:pagePath",
                                  end_date=end_date).execute()
-        self.print_results(results)
 
-#        for entry in GA.ga_query(query_filter=query,
-#                                 from_date=start_date,
-#                                 metrics=metrics,
-#                                 sort=sort,
-#                                 to_date=end_date):
-#            print entry, type(entry)
-#            import pdb; pdb.set_trace()
-#            for dim in entry.dimension:
-#                if dim.name == "ga:pagePath":
-#                    package = dim.value
-#                    count = entry.get_metric(
-#                        'ga:uniquePageviews').value or 0
-#                    packages[package] = int(count)
-        return []
+        import pprint
+        pprint.pprint(results)
+        print 'Total results: %s' % results.get('totalResults')
+
+        packages = []
+        for entry in results.get('rows'):
+            (loc,size,) = entry
+            packages.append( ('http:/' + loc,size, '',) )
+        return dict(url=packages)
 
     def print_results(self, results):
         import pprint
         pprint.pprint(results)
         if results:
             print 'Profile: %s' % results.get('profileInfo').get('profileName')
-            print 'Total results: %s' % results.get('totalResults')
+
             print 'Total Visits: %s' % results.get('rows', [[-1]])[0][0]
         else:
             print 'No results found'

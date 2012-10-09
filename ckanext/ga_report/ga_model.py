@@ -4,28 +4,38 @@ import uuid
 from sqlalchemy import Table, Column, MetaData
 from sqlalchemy import types
 from sqlalchemy.sql import select
+from sqlalchemy.orm import mapper
 from sqlalchemy import func
 
 import ckan.model as model
-from ckan.model.types import JsonType
 from ckan.lib.base import *
-
 
 def make_uuid():
     return unicode(uuid.uuid4())
 
 
+
+class GA_Url(object):
+
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            setattr(self, k, v)
+
+
+metadata = MetaData()
+url_table = Table('ga_url', metadata,
+                      Column('id', types.UnicodeText, primary_key=True,
+                             default=make_uuid),
+                      Column('period_name', types.UnicodeText),
+                      Column('period_complete_day', types.Integer),
+                      Column('visits', types.Integer),
+                      Column('url', types.UnicodeText),
+                      Column('next_page', types.UnicodeText),
+                )
+mapper(GA_Url, url_table)
+
+
 def init_tables():
-    metadata = MetaData()
-    package_stats = Table('ga_url', metadata,
-                          Column('id', types.UnicodeText, primary_key=True,
-                                 default=make_uuid),
-                          Column('period_name', types.UnicodeText),
-                          Column('period_complete_day', types.Integer),
-                          Column('visits', types.Integer),
-                          Column('group_id', types.String(60)),
-                          Column('next_page', JsonType),
-                          )
     metadata.create_all(model.meta.engine)
 
 
@@ -66,31 +76,26 @@ def _get_department_id_of_url(url):
 
 def update_url_stats(period_name, period_complete_day, url_data):
     table = get_table('ga_url')
-    connection = model.Session.connection()
     for url, views, next_page in url_data:
         url = _normalize_url(url)
         department_id = _get_department_id_of_url(url)
         # see if the row for this url & month is in the table already
-        s = select([func.count(id_col)],
-                   table.c.period_name == period_name,
-                   table.c.url == url)
-        count = connection.execute(s).fetchone()
-        if count and count[0]:
-            # update the row
-            connection.execute(table.update()
-                .where(table.c.period_name == period_name,
-                       table.c.url == url)
-                .values(period_complete_day=period_complete_day,
-                        views=views,
-                        department_id=department_id,
-                        next_page=next_page))
+        item = model.Session.query(GA_Url).filter(GA_Url.period_name==period_name).filter(GA_Url.url==url).first()
+        if item:
+            item.period_name = period_complete_day=period_complete_day
+            item.views = views
+            item.department_id = department_id
+            item.next_page = next_page
+            model.Session.add(item)
         else:
             # create the row
-            values = {'period_name': period_name,
+            values = {'id': make_uuid(),
+                      'period_name': period_name,
                       'period_complete_day': period_complete_day,
                       'url': url,
                       'views': views,
                       'department_id': department_id,
                       'next_page': next_page}
-            connection.execute(stats.insert().
-                values(**values))
+            obj = GA_Url(**values)
+            model.Session.add(obj)
+        model.Session.commit()
