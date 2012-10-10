@@ -35,17 +35,3 @@ class TestAPI:
             downloader.since_date(datetime.datetime.now() - datetime.timedelta(days=-30))
         except Exception as e:
             assert False, e
-
-"""
-        downloader = DownloadAnalytics(svc, profile_id=get_profile_id(svc))
-
-        time_period = self.args[1] if self.args and len(self.args) > 1 \
-            else 'latest'
-        if time_period == 'all':
-            downloader.all_()
-        elif time_period == 'latest':
-            downloader.latest()
-        else:
-            since_date = datetime.datetime.strptime(time_period, '%Y-%m-%d')
-            downloader.since_date(since_date)
-"""
