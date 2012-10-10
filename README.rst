@@ -32,11 +32,9 @@ Installation
 
       googleanalytics.id = UA-1010101-1
       googleanalytics.account = Account name (i.e. data.gov.uk, see top level item at https://www.google.com/analytics)
-      googleanalytics.username = googleaccount@gmail.com
-      googleanalytics.password = googlepassword
       ga-report.period = monthly
 
-   Note that your password will be readable by system administrators on your server. Rather than use sensitive account details, it is suggested you give access to the GA account to a new Google account that you create just for this purpose.
+   Note that your credentials will be readable by system administrators on your server. Rather than use sensitive account details, it is suggested you give access to the GA account to a new Google account that you create just for this purpose.
 
 3. Set up this extension's database tables using a paster command. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file)::
 

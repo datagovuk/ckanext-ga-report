@@ -28,9 +28,10 @@ url_table = Table('ga_url', metadata,
                              default=make_uuid),
                       Column('period_name', types.UnicodeText),
                       Column('period_complete_day', types.Integer),
-                      Column('visits', types.Integer),
+                      Column('metric', types.UnicodeText),
+                      Column('value', types.UnicodeText),
                       Column('url', types.UnicodeText),
-                      Column('next_page', types.UnicodeText),
+                      Column('department_id', types.UnicodeText),
                 )
 mapper(GA_Url, url_table)
 
@@ -71,7 +72,7 @@ def _get_department_id_of_url(url):
         if dataset:
             publisher_groups = dataset.get_groups('publisher')
             if publisher_groups:
-                return publisher_groups[0].id
+                return publisher_groups[0].name
 
 
 def update_url_stats(period_name, period_complete_day, url_data):
@@ -79,13 +80,16 @@ def update_url_stats(period_name, period_complete_day, url_data):
     for url, views, next_page in url_data:
         url = _normalize_url(url)
         department_id = _get_department_id_of_url(url)
+
         # see if the row for this url & month is in the table already
-        item = model.Session.query(GA_Url).filter(GA_Url.period_name==period_name).filter(GA_Url.url==url).first()
+        item = model.Session.query(GA_Url).\
+            filter(GA_Url.period_name==period_name).\
+            filter(GA_Url.url==url).\
+            filter(GA_Url.metric == 'Total views').first()
         if item:
-            item.period_name = period_complete_day=period_complete_day
-            item.views = views
+            item.period_name = period_complete_day = period_complete_day
+            item.value = views
             item.department_id = department_id
-            item.next_page = next_page
             model.Session.add(item)
         else:
             # create the row
@@ -93,9 +97,9 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'period_name': period_name,
                       'period_complete_day': period_complete_day,
                       'url': url,
-                      'views': views,
-                      'department_id': department_id,
-                      'next_page': next_page}
-            obj = GA_Url(**values)
-            model.Session.add(obj)
+                      'value': views,
+                      'metric': 'Total views',
+                      'department_id': department_id
+                     }
+            model.Session.add(GA_Url(**values))
         model.Session.commit()

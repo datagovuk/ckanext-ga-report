@@ -94,9 +94,6 @@ class DownloadAnalytics(object):
         '''Get data from GA for a given time period'''
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
-        # url
-        #query = 'ga:pagePath=~^%s,ga:pagePath=~^%s' % \
-        #        (PACKAGE_URL, self.resource_url_tag)
         query = 'ga:pagePath=~/dataset/[a-z0-9-]+$'
         metrics = 'ga:uniquePageviews'
         sort = '-ga:uniquePageviews'
@@ -110,7 +107,9 @@ class DownloadAnalytics(object):
                                  metrics=metrics,
                                  sort=sort,
                                  dimensions="ga:pagePath",
+                                 max_results=10000,
                                  end_date=end_date).execute()
+
 
         import pprint
         pprint.pprint(results)
@@ -119,18 +118,8 @@ class DownloadAnalytics(object):
         packages = []
         for entry in results.get('rows'):
             (loc,size,) = entry
-            packages.append( ('http:/' + loc,size, '',) )
+            packages.append( ('http:/' + loc,size, '',) ) # Temporary hack
         return dict(url=packages)
-
-    def print_results(self, results):
-        import pprint
-        pprint.pprint(results)
-        if results:
-            print 'Profile: %s' % results.get('profileInfo').get('profileName')
-
-            print 'Total Visits: %s' % results.get('rows', [[-1]])[0][0]
-        else:
-            print 'No results found'
 
     def store(self, period_name, period_complete_day, data):
         if 'url' in data:
