@@ -1,3 +1,4 @@
+import os
 import logging
 import datetime
 
@@ -110,10 +111,10 @@ class DownloadAnalytics(object):
                                  max_results=10000,
                                  end_date=end_date).execute()
 
-
-        import pprint
-        pprint.pprint(results)
-        print 'Total results: %s' % results.get('totalResults')
+        if os.getenv('DEBUG'):
+            import pprint
+            pprint.pprint(results)
+            print 'Total results: %s' % results.get('totalResults')
 
         packages = []
         for entry in results.get('rows'):

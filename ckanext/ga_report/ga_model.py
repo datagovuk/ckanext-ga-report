@@ -76,7 +76,6 @@ def _get_department_id_of_url(url):
 
 
 def update_url_stats(period_name, period_complete_day, url_data):
-    table = get_table('ga_url')
     for url, views, next_page in url_data:
         url = _normalize_url(url)
         department_id = _get_department_id_of_url(url)
