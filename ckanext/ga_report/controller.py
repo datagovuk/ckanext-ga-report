@@ -6,4 +6,10 @@ log = logging.getLogger('ckanext.ga-report')
 
 class GaReport(BaseController):
     def index(self):
-        return render('index.html')
+        return render('ga_report/site/index.html')
+
+
+class GaPublisherReport(BaseController):
+
+    def index(self, id):
+        return render('ga_report/publisher/index.html')

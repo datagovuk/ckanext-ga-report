@@ -27,7 +27,7 @@ setup(
 	"""
         [ckan.plugins]
 	# Add plugins here, eg
-	ga-report=ckanext.ga_report.plugin:GaReportPlugin
+	ga-report=ckanext.ga_report.plugin:GAReportPlugin
 
         [paste.paster_command]
         loadanalytics = ckanext.ga_report.command:LoadAnalytics

@@ -1,13 +1,14 @@
 import logging
 import ckan.lib.helpers as h
+import ckan.plugins as p
 from ckan.plugins import implements, toolkit
-import gasnippet
-import commands
-import dbutil
+#import gasnippet
+#import commands
+#import dbutil
 
 log = logging.getLogger('ckanext.ga-report')
 
-class GoogleAnalyticsPlugin(p.SingletonPlugin):
+class GAReportPlugin(p.SingletonPlugin):
     implements(p.IConfigurer, inherit=True)
     implements(p.IRoutes, inherit=True)
 
@@ -17,8 +18,13 @@ class GoogleAnalyticsPlugin(p.SingletonPlugin):
 
     def after_map(self, map):
         map.connect(
-            '/data/analytics/index',
-            controller='ckanext.ga-report.controller:GaReport',
+            '/data/analytics/usage',
+            controller='ckanext.ga_report.controller:GaReport',
+            action='index'
+        )
+        map.connect(
+            '/data/analytics/publisher/{id}',
+            controller='ckanext.ga_report.controller:GaPublisherReport',
             action='index'
         )
         return map
