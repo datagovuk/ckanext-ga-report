@@ -85,7 +85,7 @@ class DownloadAnalytics(object):
                      self.get_full_period_name(period_name, period_complete_day),
                      start_date.strftime('%Y %m %d'),
                      end_date.strftime('%Y %m %d'))
-
+            """
             data = self.download(start_date, end_date, '~/dataset/[a-z0-9-_]+')
             log.info('Storing Dataset Analytics for period "%s"',
                      self.get_full_period_name(period_name, period_complete_day))
@@ -95,8 +95,8 @@ class DownloadAnalytics(object):
             log.info('Storing Publisher Analytics for period "%s"',
                      self.get_full_period_name(period_name, period_complete_day))
             self.store(period_name, period_complete_day, data,)
-            ga_model.update_publisher_stats(period_name)
-
+            """
+            ga_model.update_publisher_stats(period_name) # about 30 seconds.
             self.sitewide_stats( period_name )
 
 
@@ -105,7 +105,7 @@ class DownloadAnalytics(object):
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
         query = 'ga:pagePath=%s$' % path
-        metrics = 'ga:uniquePageviews, ga:visits'
+        metrics = 'ga:uniquePageviews, ga:visitors'
         sort = '-ga:uniquePageviews'
 
         # Supported query params at
@@ -135,7 +135,6 @@ class DownloadAnalytics(object):
         if 'url' in data:
             ga_model.update_url_stats(period_name, period_complete_day, data['url'])
 
-
     def sitewide_stats(self, period_name):
         import calendar
         year, month = period_name.split('-')
@@ -151,6 +150,12 @@ class DownloadAnalytics(object):
             print ' + Fetching %s stats' % f.split('_')[1]
             getattr(self, f)(start_date, end_date, period_name)
 
+    def _get_results(result_data, f):
+        data = {}
+        for result in result_data:
+            key = f(result)
+            data[key] = data.get(key,0) + result[1]
+        return data
 
     def _totals_stats(self, start_date, end_date, period_name):
         """ Fetches distinct totals, total pageviews etc """
@@ -264,7 +269,7 @@ class DownloadAnalytics(object):
 
         data = {}
         for result in result_data:
-            key = "%s (%s)" % (result[0],result[1])
+            key = "%s (%s)" % (result[0], result[1])
             data[key] = result[2]
         ga_model.update_sitewide_stats(period_name, "Browser versions", data)
 

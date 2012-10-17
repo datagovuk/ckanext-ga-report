@@ -41,7 +41,7 @@ url_table = Table('ga_url', metadata,
                       Column('period_name', types.UnicodeText),
                       Column('period_complete_day', types.Integer),
                       Column('pageviews', types.UnicodeText),
-                      Column('visits', types.UnicodeText),
+                      Column('visitors', types.UnicodeText),
                       Column('url', types.UnicodeText),
                       Column('department_id', types.UnicodeText),
                 )
@@ -63,7 +63,10 @@ pub_table = Table('ga_publisher', metadata,
                   Column('period_name', types.UnicodeText),
                   Column('publisher_name', types.UnicodeText),
                   Column('views', types.UnicodeText),
-                  Column('visits', types.UnicodeText),
+                  Column('visitors', types.UnicodeText),
+                  Column('toplevel', types.Boolean, default=False),
+                  Column('subpublishercount', types.Integer, default=0),
+                  Column('parent', types.UnicodeText),
 )
 mapper(GA_Publisher, pub_table)
 
@@ -136,7 +139,7 @@ def update_sitewide_stats(period_name, stat_name, data):
 
 
 def update_url_stats(period_name, period_complete_day, url_data):
-    for url, views, visits in url_data:
+    for url, views, visitors in url_data:
         url = _normalize_url(url)
         department_id = _get_department_id_of_url(url)
 
@@ -147,7 +150,7 @@ def update_url_stats(period_name, period_complete_day, url_data):
         if item:
             item.period_name = period_name
             item.pageviews = views
-            item.visits = visits
+            item.visitors = visitors
             item.department_id = department_id
             model.Session.add(item)
         else:
@@ -157,7 +160,7 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'period_complete_day': period_complete_day,
                       'url': url,
                       'pageviews': views,
-                      'visits': visits,
+                      'visitors': visitors,
                       'department_id': department_id
                      }
             model.Session.add(GA_Url(**values))
@@ -166,16 +169,30 @@ def update_url_stats(period_name, period_complete_day, url_data):
 
 
 def update_publisher_stats(period_name):
-    publishers = get_top_level()
+    """
+    Updates the publisher stats from the data retrieved for /dataset/*
+    and /publisher/*. Will run against each dataset and generates the
+    totals for the entire tree beneath each publisher.
+    """
+    toplevel = get_top_level()
+    publishers = model.Session.query(model.Group).\
+        filter(model.Group.type=='publisher').\
+        filter(model.Group.state=='active').all()
     for publisher in publishers:
-        views, visits = update_publisher(period_name, publisher, publisher.name)
+        views, visitors, subpub = update_publisher(period_name, publisher, publisher.name)
+        parent, parents = '', publisher.get_groups('publisher')
+        if parents:
+            parent = parents[0].name
         item = model.Session.query(GA_Publisher).\
             filter(GA_Publisher.period_name==period_name).\
             filter(GA_Publisher.publisher_name==publisher.name).first()
         if item:
             item.views = views
-            item.visits = visits
+            item.visitors = visitors
             item.publisher_name = publisher.name
+            item.toplevel = publisher in toplevel
+            item.subpublishercount = subpub
+            item.parent = parent
             model.Session.add(item)
         else:
             # create the row
@@ -183,23 +200,27 @@ def update_publisher_stats(period_name):
                      'period_name': period_name,
                      'publisher_name': publisher.name,
                      'views': views,
-                     'visits': visits,
+                     'visitors': visitors,
+                     'toplevel': publisher in toplevel,
+                     'subpublishercount': subpub,
+                     'parent': parent
                      }
             model.Session.add(GA_Publisher(**values))
         model.Session.commit()
 
 
 def update_publisher(period_name, pub, part=''):
-    views,visits = 0, 0
+    views,visitors,subpub = 0, 0, 0
     for publisher in go_down_tree(pub):
-        f = model.Session.query(GA_Url).\
+        subpub = subpub + 1
+        items = model.Session.query(GA_Url).\
                 filter(GA_Url.period_name==period_name).\
-                filter(GA_Url.url=='/publisher/' + publisher.name).first()
-        if f:
-            views = views + int(f.pageviews)
-            visits = visits + int(f.visits)
+                filter(GA_Url.department_id==publisher.name).all()
+        for item in items:
+            views = views + int(item.pageviews)
+            visitors = visitors + int(item.visitors)
 
-    return views, visits
+    return views, visitors, (subpub-1)
 
 
 def get_top_level():
