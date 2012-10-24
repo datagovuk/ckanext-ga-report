@@ -52,7 +52,7 @@ class GaPublisherReport(BaseController):
         entries = model.Session.query(GA_Url).\
             filter(GA_Url.department_id==c.publisher.name).\
             filter(GA_Url.period_name==c.month).\
-            order_by('ga_url.pageviews desc').all()
+            order_by('ga_url.pageviews desc')[:10]
         for entry in entries:
             if entry.url.startswith('/dataset/'):
                 p = model.Package.get(entry.url[len('/dataset/'):])
