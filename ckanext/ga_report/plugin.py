@@ -18,7 +18,7 @@ class GAReportPlugin(p.SingletonPlugin):
 
     def after_map(self, map):
         map.connect(
-            '/data/analytics/usage',
+            '/data/analytics/',
             controller='ckanext.ga_report.controller:GaReport',
             action='index'
         )
