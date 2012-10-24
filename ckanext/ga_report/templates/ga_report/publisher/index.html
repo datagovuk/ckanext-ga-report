@@ -5,6 +5,12 @@
 
   <py:def function="page_title">Publisher Analytics for ${g.site_title}</py:def>
 
+  <py:match path="primarysidebar">
+    <li class="widget-container boxed widget_text">
+      <h4>Publishers</h4>
+    </li>
+  </py:match>
+
   <div py:match="content">
       <h1>Publisher Analytics</h1>
       <h2>The top 20 publishers</h2>

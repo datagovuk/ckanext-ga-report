@@ -5,6 +5,22 @@
 
   <py:def function="page_title">Analytics for ${g.site_title}</py:def>
 
+ <py:match path="primarysidebar">
+    <li class="widget-container boxed widget_text">
+      <h4>${c.publisher.title}</h4>
+      <p>
+          The table shows the top 20 most viewed datasets belonging to ${c.publisher.title}.
+      </p>
+      <p>
+          As well as showing the number of views within ${c.month_desc}, it will also show the
+          number of visitors that viewed each dataset.
+      </p>
+      <p>
+       <p>The dataset list page for <a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController', action='read', id=c.publisher.name)}">${c.publisher.title}</a> was viewed ${c.publisher_page_views} times during ${c.month_desc}</p>
+      </p>
+    </li>
+  </py:match>
+
   <div py:match="content">
       <h1>Analytics for ${c.publisher.title}</h1>
 
@@ -21,8 +37,6 @@
            <input class="btn button" type='submit' value="Update"/>
           </div>
        </form>
-
-       <p><a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController', action='read', id=c.publisher.name)}">${c.publisher.title} dataset list</a> was viewed ${c.publisher_page_views} times in ${c.month_desc}</p>
 
        <table class="table table-condensed table-bordered table-striped">
 	 <tr>
