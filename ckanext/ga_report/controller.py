@@ -88,28 +88,30 @@ class GaPublisherReport(BaseController):
     """
 
     def index(self):
-        # Get the month details by fetching distinct values and determining the
-        # month names from the values.
-        c.months = _month_details(GA_Url)
+        try:
+            # Get the month details by fetching distinct values and determining the
+            # month names from the values.
+            c.months = _month_details(GA_Url)
 
-        # Work out which month to show, based on query params of the first item
-        c.month = request.params.get('month', c.months[0][0] if c.months else '')
-        c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
+            # Work out which month to show, based on query params of the first item
+            c.month = request.params.get('month', c.months[0][0] if c.months else '')
+            c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
-        connection = model.Session.connection()
-        q = """
-            select department_id, sum(pageviews::int) views, sum(visitors::int) visits
-            from ga_url
-            where department_id <> ''
-                and not url like '/publisher/%%'
-                and period_name=%s
-            group by department_id order by views desc limit 20;
-        """
-        c.top_publishers = []
-        res = connection.execute(q, c.month)
-        for row in res:
-            c.top_publishers.append((model.Group.get(row[0]), row[1], row[2]))
-
+            connection = model.Session.connection()
+            q = """
+                select department_id, sum(pageviews::int) views, sum(visitors::int) visits
+                from ga_url
+                where department_id <> ''
+                    and not url like '/publisher/%%'
+                    and period_name=%s
+                group by department_id order by views desc limit 20;
+            """
+            c.top_publishers = []
+            res = connection.execute(q, c.month)
+            for row in res:
+                c.top_publishers.append((model.Group.get(row[0]), row[1], row[2]))
+        except Exception as e:
+            raise e
         return render('ga_report/publisher/index.html')
 
 
