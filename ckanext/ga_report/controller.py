@@ -132,7 +132,7 @@ class GaPublisherReport(BaseController):
 
         c.publisher = model.Group.get(id)
         if not c.publisher:
-            abort(404, '404 Not Found')
+            abort(404, 'A publisher with that name could not be found')
         c.top_packages = [] # package, dataset_views in c.top_packages
 
         # Get the month details by fetching distinct values and determining the
