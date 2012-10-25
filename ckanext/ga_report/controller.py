@@ -1,6 +1,6 @@
 import logging
 import operator
-from ckan.lib.base import BaseController, c, render, request, response
+from ckan.lib.base import BaseController, c, render, request, response, abort
 
 import sqlalchemy
 from sqlalchemy import func, cast, Integer
@@ -129,7 +129,10 @@ class GaPublisherReport(BaseController):
 
 
     def read(self, id):
+
         c.publisher = model.Group.get(id)
+        if not c.publisher:
+            abort(404, '404 Not Found')
         c.top_packages = [] # package, dataset_views in c.top_packages
 
         # Get the month details by fetching distinct values and determining the
