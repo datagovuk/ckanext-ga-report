@@ -59,7 +59,15 @@ class GaReport(BaseController):
             filter(GA_Stat.stat_name=='Totals').\
             filter(GA_Stat.period_name==c.month).\
             order_by('ga_stat.key').all()
-        c.global_totals = [(s.key, s.value) for s in entries ]
+
+        c.global_totals = []
+        for e in entries:
+            val = e.value
+            if e.key in ['Average time on site', 'Pages per visit', 'Percent new visits']:
+                val =  "%.2f" % round(float(e.value), 2)
+                e.key = '%s *' % e.key
+            c.global_totals.append((e.key, val))
+
 
         keys = {
             'Browser versions': 'browsers',
@@ -95,7 +103,7 @@ class GaPublisherReport(BaseController):
         # Work out which month to show, based on query params of the first item
         c.month = request.params.get('month', c.months[0][0] if c.months else '')
         c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
-#                and not url like '/publisher/%%'
+
         connection = model.Session.connection()
         q = """
             select department_id, sum(pageviews::int) views, sum(visitors::int) visits
@@ -104,6 +112,10 @@ class GaPublisherReport(BaseController):
                 and period_name=%s
             group by department_id order by views desc limit 20;
         """
+        # Add this back (before and period_name =%s) if you want to ignore publisher
+        # homepage views
+        # and not url like '/publisher/%%'
+
         c.top_publishers = []
         res = connection.execute(q, c.month)
         for row in res:
