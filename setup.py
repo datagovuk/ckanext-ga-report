@@ -32,5 +32,6 @@ setup(
         [paste.paster_command]
         loadanalytics = ckanext.ga_report.command:LoadAnalytics
         initdb = ckanext.ga_report.command:InitDB
+        getauthtoken = ckanext.ga_report.command:GetAuthToken
 	""",
 )
