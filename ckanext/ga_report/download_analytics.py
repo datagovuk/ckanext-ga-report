@@ -21,8 +21,17 @@ class DownloadAnalytics(object):
         self.profile_id = profile_id
 
 
-    def all_(self):
-        self.since_date(datetime.datetime(2010, 1, 1))
+    def specific_month(self, date):
+        import calendar
+
+        first_of_this_month = datetime.datetime(date.year, date.month, 1)
+        _, last_day_of_month = calendar.monthrange(int(date.year), int(date.month))
+        last_of_this_month =  datetime.datetime(date.year, date.month, last_day_of_month)
+        periods = ((date.strftime(FORMAT_MONTH),
+                    last_day_of_month,
+                    first_of_this_month, last_of_this_month),)
+        self.download_and_store(periods)
+
 
     def latest(self):
         if self.period == 'monthly':
@@ -37,13 +46,13 @@ class DownloadAnalytics(object):
         self.download_and_store(periods)
 
 
-    def since_date(self, since_date):
+    def for_date(self, for_date):
         assert isinstance(since_date, datetime.datetime)
         periods = [] # (period_name, period_complete_day, start_date, end_date)
         if self.period == 'monthly':
             first_of_the_months_until_now = []
-            year = since_date.year
-            month = since_date.month
+            year = for_date.year
+            month = for_date.month
             now = datetime.datetime.now()
             first_of_this_month = datetime.datetime(now.year, now.month, 1)
             while True:

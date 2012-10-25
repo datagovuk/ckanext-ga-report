@@ -66,8 +66,7 @@ class LoadAnalytics(CkanCommand):
     And where <time-period> is:
         all         - data for all time
         latest      - (default) just the 'latest' data
-        YYYY-MM-DD  - just data for all time periods going
-                      back to (and including) this date
+        YYYY-MM     - just data for the specific month
     """
     summary = __doc__.split('\n')[0]
     usage = __doc__
@@ -96,5 +95,6 @@ class LoadAnalytics(CkanCommand):
         elif time_period == 'latest':
             downloader.latest()
         else:
-            since_date = datetime.datetime.strptime(time_period, '%Y-%m-%d')
-            downloader.since_date(since_date)
+            # The month to use
+            for_date = datetime.datetime.strptime(time_period, '%Y-%m')
+            downloader.specific_month(for_date)

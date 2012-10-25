@@ -32,6 +32,6 @@ class TestAPI:
         svc = init_service("token.dat", "credentials.json")
         downloader = DownloadAnalytics(svc, profile_id=get_profile_id(svc))
         try:
-            downloader.since_date(datetime.datetime.now() - datetime.timedelta(days=-30))
+            downloader.for_date(datetime.datetime.now() - datetime.timedelta(days=-30))
         except Exception as e:
             assert False, e

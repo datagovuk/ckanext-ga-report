@@ -10,10 +10,10 @@ from ga_model import GA_Url, GA_Stat
 log = logging.getLogger('ckanext.ga-report')
 
 
-def _get_month_name(str):
+def _get_month_name(strdate):
     import calendar
     from time import strptime
-    d = strptime('2012-10', '%Y-%m')
+    d = strptime(strdate, '%Y-%m')
     return '%s %s' % (calendar.month_name[d.tm_mon], d.tm_year)
 
 
@@ -21,7 +21,7 @@ def _month_details(cls):
     months = []
     vals = model.Session.query(cls.period_name).distinct().all()
     for m in vals:
-        months.append( (m[0], _get_month_name(m)))
+        months.append( (m[0], _get_month_name(m[0])))
     return sorted(months, key=operator.itemgetter(0), reverse=True)
 
 
