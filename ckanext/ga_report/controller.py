@@ -95,13 +95,12 @@ class GaPublisherReport(BaseController):
         # Work out which month to show, based on query params of the first item
         c.month = request.params.get('month', c.months[0][0] if c.months else '')
         c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
-
+#                and not url like '/publisher/%%'
         connection = model.Session.connection()
         q = """
             select department_id, sum(pageviews::int) views, sum(visitors::int) visits
             from ga_url
             where department_id <> ''
-                and not url like '/publisher/%%'
                 and period_name=%s
             group by department_id order by views desc limit 20;
         """
