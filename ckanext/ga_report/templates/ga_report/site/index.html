@@ -9,6 +9,8 @@
     <li class="widget-container boxed widget_text">
       <h4>Statistics</h4>
     </li>
+        <p>It is possible to<a href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month)}">export the data</a> as CSV, which contains all of the information for ${c.month_desc}</p>
+
   </py:match>
 
   <div py:match="content">
@@ -24,8 +26,6 @@
            <input class="btn button" type='submit' value="Update"/>
           </div>
        </form>
-
-    <p><a href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month)}">Export data</a> as CSV</p>
 
     <div class="tabbable">
       <ul class="nav nav-tabs">
