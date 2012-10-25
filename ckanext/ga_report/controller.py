@@ -65,6 +65,10 @@ class GaReport(BaseController):
             val = e.value
             if e.key in ['Average time on site', 'Pages per visit', 'Percent new visits']:
                 val =  "%.2f" % round(float(e.value), 2)
+                if e.key == 'Average time on site':
+                    mins, secs = divmod(float(val), 60)
+                    hours, mins = divmod(mins, 60)
+                    val = '%02d:%02d:%02d (%s seconds) ' % (hours, mins, secs, val)
                 e.key = '%s *' % e.key
             c.global_totals.append((e.key, val))
 
