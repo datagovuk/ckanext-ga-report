@@ -15,9 +15,8 @@
           As well as showing the number of views within ${c.month_desc}, it will also show the
           number of visitors that viewed each dataset.
       </p>
-      <p>
        <p>The dataset list page for <a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController', action='read', id=c.publisher.name)}">${c.publisher.title}</a> was viewed ${c.publisher_page_views} times during ${c.month_desc}</p>
-      </p>
+       <p>Go back to <a href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport', action='index')}">publishers</a></p>
     </li>
   </py:match>
 
