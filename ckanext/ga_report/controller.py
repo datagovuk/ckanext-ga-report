@@ -34,7 +34,6 @@ class GaReport(BaseController):
             filter(GA_Stat.period_name==month).\
             order_by('GA_Stat.stat_name, GA_Stat.key').all()
 
-        #response.headers['Content-disposition'] = 'attachment; filename=dgu_analytics_%s.csv' % (month,)
         response.headers['Content-Type'] = "text/csv; charset=utf-8"
 
         writer = csv.writer(response)

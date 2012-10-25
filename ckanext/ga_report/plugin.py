@@ -18,7 +18,7 @@ class GAReportPlugin(p.SingletonPlugin):
 
     def after_map(self, map):
         map.connect(
-            '/data/analytics/publisher/',
+            '/data/analytics/publisher',
             controller='ckanext.ga_report.controller:GaPublisherReport',
             action='index'
         )
