@@ -85,7 +85,7 @@ class DownloadAnalytics(object):
                      self.get_full_period_name(period_name, period_complete_day),
                      start_date.strftime('%Y %m %d'),
                      end_date.strftime('%Y %m %d'))
-            """
+
             data = self.download(start_date, end_date, '~/dataset/[a-z0-9-_]+')
             log.info('Storing Dataset Analytics for period "%s"',
                      self.get_full_period_name(period_name, period_complete_day))
@@ -95,7 +95,7 @@ class DownloadAnalytics(object):
             log.info('Storing Publisher Analytics for period "%s"',
                      self.get_full_period_name(period_name, period_complete_day))
             self.store(period_name, period_complete_day, data,)
-            """
+
             ga_model.update_publisher_stats(period_name) # about 30 seconds.
             self.sitewide_stats( period_name )
 
