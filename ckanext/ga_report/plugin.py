@@ -33,7 +33,7 @@ class GAReportPlugin(p.SingletonPlugin):
             action='index'
         )
         map.connect(
-            '/data/analytics_{month}.csv',
+            '/data/analytics/data_{month}.csv',
             controller='ckanext.ga_report.controller:GaReport',
             action='csv'
         )
