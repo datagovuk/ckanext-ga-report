@@ -8,9 +8,9 @@
   <py:match path="primarysidebar">
     <li class="widget-container boxed widget_text">
       <h4>Statistics</h4>
-    </li>
-        <p>It is possible to<a href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month)}">export the data</a> as CSV, which contains all of the information for ${c.month_desc}</p>
+        <p>It is possible to <a href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month)}">export the analytics data</a> as a CSV file, which contains all of the information for ${c.month_desc}</p>
 
+    </li>
   </py:match>
 
   <div py:match="content">
