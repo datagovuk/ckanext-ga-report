@@ -58,7 +58,8 @@ class GaReport(BaseController):
 
         entries = model.Session.query(GA_Stat).\
             filter(GA_Stat.stat_name=='Totals').\
-            filter(GA_Stat.period_name==c.month).all()
+            filter(GA_Stat.period_name==c.month).\
+            order_by('ga_stat.key').all()
         c.global_totals = [(s.key, s.value) for s in entries ]
 
         keys = {
