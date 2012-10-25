@@ -26,7 +26,7 @@ Installation
 1. Activate you CKAN python environment and install this extension's software::
 
     $ pyenv/bin/activate
-    $ pip install -e  git+https://github.com/okfn/ckanext-ga-report.git#egg=ckanext-ga-report
+    $ pip install -e  git+https://github.com/datagovuk/ckanext-ga-report.git#egg=ckanext-ga-report
 
 2. Ensure you development.ini (or similar) contains the info about your Google Analytics account and configuration::
 
