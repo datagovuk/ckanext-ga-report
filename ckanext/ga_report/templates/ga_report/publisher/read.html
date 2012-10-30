@@ -21,7 +21,7 @@
     <li class="widget-container boxed widget_text">
       <h4>Download</h4>
       <p><center>
-          <a class="btn button" href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month or 'all')}">Download as CSV</a></center>
+          <a class="btn button" href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='publisher_csv',id=c.publisher.name,month=c.month or 'all')}">Download as CSV</a></center>
       </p>
     </li>
   </py:match>

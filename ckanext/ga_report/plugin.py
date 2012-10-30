@@ -27,22 +27,32 @@ class GAReportPlugin(p.SingletonPlugin):
 
     def after_map(self, map):
         map.connect(
-            '/data/analytics/publisher',
+            '/data/site-usage/publisher',
             controller='ckanext.ga_report.controller:GaPublisherReport',
             action='index'
         )
         map.connect(
-            '/data/analytics/publisher/{id}',
+            '/data/site-usage/publisher_{month}.csv',
+            controller='ckanext.ga_report.controller:GaPublisherReport',
+            action='csv'
+        )
+        map.connect(
+            '/data/site-usage/publisher/{id}_{month}.csv',
+            controller='ckanext.ga_report.controller:GaPublisherReport',
+            action='publisher_csv'
+        )
+        map.connect(
+            '/data/site-usage/publisher/{id}',
             controller='ckanext.ga_report.controller:GaPublisherReport',
             action='read'
         )
         map.connect(
-            '/data/analytics',
+            '/data/site-usage',
             controller='ckanext.ga_report.controller:GaReport',
             action='index'
         )
         map.connect(
-            '/data/analytics/data_{month}.csv',
+            '/data/site-usage/data_{month}.csv',
             controller='ckanext.ga_report.controller:GaReport',
             action='csv'
         )
