@@ -21,7 +21,8 @@ class GAReportPlugin(p.SingletonPlugin):
         """
         from ckanext.ga_report.helpers import most_popular_datasets
         return {
-            'most_popular_datasets': most_popular_datasets
+            'ga_report_installed': lambda: True,
+            'most_popular_datasets': most_popular_datasets,
         }
 
     def after_map(self, map):

@@ -33,6 +33,7 @@ def most_popular_datasets(publisher, count=20):
     ctx = {
         'dataset_count': len(datasets),
         'datasets': results,
+
         'publisher': publisher
     }
 
