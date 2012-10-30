@@ -16,13 +16,14 @@ def most_popular_datasets(publisher, count=20):
     entries = model.Session.query(GA_Url).\
         filter(GA_Url.department_id==publisher.name).\
         filter(GA_Url.url.like('/dataset/%')).\
-        order_by('ga_url.pageviews::int desc')[:count]
+        order_by('ga_url.pageviews::int desc').all()
     for entry in entries:
-        p = model.Package.get(entry.url[len('/dataset/'):])
-        if not p in datasets:
-            datasets[p] = {'views':0, 'visits': 0}
-        datasets[p]['views'] = datasets[p]['views'] + int(entry.pageviews)
-        datasets[p]['visits'] = datasets[p]['visits'] + int(entry.visitors)
+        if len(datasets) < count:
+            p = model.Package.get(entry.url[len('/dataset/'):])
+            if not p in datasets:
+                datasets[p] = {'views':0, 'visits': 0}
+            datasets[p]['views'] = datasets[p]['views'] + int(entry.pageviews)
+            datasets[p]['visits'] = datasets[p]['visits'] + int(entry.visitors)
 
     results = []
     for k, v in datasets.iteritems():

@@ -105,23 +105,31 @@ class GaPublisherReport(BaseController):
         c.months = _month_details(GA_Url)
 
         # Work out which month to show, based on query params of the first item
-        c.month = request.params.get('month', c.months[0][0] if c.months else '')
-        c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
+        c.month = request.params.get('month', '')
+        c.month_desc = 'all time'
+        if c.month:
+            c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
         connection = model.Session.connection()
         q = """
             select department_id, sum(pageviews::int) views, sum(visitors::int) visits
             from ga_url
-            where department_id <> ''
-                and period_name=%s
-            group by department_id order by views desc limit 20;
-        """
+            where department_id <> ''"""
+        if c.month:
+            q = q + """
+                    and period_name=%s
+            """
+        q = q + """
+                group by department_id order by views desc limit 20;
+            """
+
         # Add this back (before and period_name =%s) if you want to ignore publisher
         # homepage views
         # and not url like '/publisher/%%'
 
         c.top_publishers = []
         res = connection.execute(q, c.month)
+
         for row in res:
             c.top_publishers.append((model.Group.get(row[0]), row[1], row[2]))
 
@@ -129,6 +137,7 @@ class GaPublisherReport(BaseController):
 
 
     def read(self, id):
+        count = 20
 
         c.publisher = model.Group.get(id)
         if not c.publisher:
@@ -140,21 +149,49 @@ class GaPublisherReport(BaseController):
         c.months = _month_details(GA_Url)
 
         # Work out which month to show, based on query params of the first item
-        c.month = request.params.get('month', c.months[0][0] if c.months else '')
-        c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
+        c.month = request.params.get('month', '')
+        if not c.month:
+            c.month_desc = 'all time'
+        else:
+            c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
-        entry = model.Session.query(GA_Url).\
-            filter(GA_Url.url=='/publisher/%s' % c.publisher.name).\
-            filter(GA_Url.period_name==c.month).first()
-        c.publisher_page_views = entry.pageviews if entry else 0
+        c.publisher_page_views = 0
+        q = model.Session.query(GA_Url).\
+            filter(GA_Url.url=='/publisher/%s' % c.publisher.name)
+        if c.month:
+            entry = q.filter(GA_Url.period_name==c.month).first()
+            c.publisher_page_views = entry.pageviews if entry else 0
+        else:
+            for e in q.all():
+                c.publisher_page_views = c.publisher_page_views  + int(e.pageviews)
 
-        entries = model.Session.query(GA_Url).\
+
+        q =  model.Session.query(GA_Url).\
             filter(GA_Url.department_id==c.publisher.name).\
-            filter(GA_Url.period_name==c.month).\
-            order_by('ga_url.pageviews::int desc')[:20]
-        for entry in entries:
-            if entry.url.startswith('/dataset/'):
+            filter(GA_Url.url.like('/dataset/%'))
+        if c.month:
+            q = q.filter(GA_Url.period_name==c.month)
+        q = q.order_by('ga_url.pageviews::int desc')
+
+        if c.month:
+            for entry in q[:count]:
                 p = model.Package.get(entry.url[len('/dataset/'):])
                 c.top_packages.append((p,entry.pageviews,entry.visitors))
+        else:
+            ds = {}
+            for entry in q.all():
+                if len(ds) >= count:
+                    break
+                p = model.Package.get(entry.url[len('/dataset/'):])
+                if not p in ds:
+                    ds[p] = {'views':0, 'visits': 0}
+                ds[p]['views'] = ds[p]['views'] + int(entry.pageviews)
+                ds[p]['visits'] = ds[p]['visits'] + int(entry.visitors)
+
+            results = []
+            for k, v in ds.iteritems():
+                results.append((k,v['views'],v['visits']))
+
+            c.top_packages = sorted(results, key=operator.itemgetter(1), reverse=True)
 
         return render('ga_report/publisher/read.html')

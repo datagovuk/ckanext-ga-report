@@ -14,11 +14,13 @@
 
   <div py:match="content">
       <h1>Publisher Analytics</h1>
-      <h2>The top 20 publishers</h2>
+      <h2>The top 20 publishers of ${c.month_desc}</h2>
 
       <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='index')}" method="get">
           <div class="controls">
           <select name="month">
+                <option value='' py:attrs="{'selected': 'selected' if not c.month else None}">All time</option>
+
               <py:for each="val,desc in c.months">
                 <option value='${val}' py:attrs="{'selected': 'selected' if c.month == val else None}">${desc}</option>
               </py:for>
