@@ -9,6 +9,10 @@
     <li class="widget-container boxed widget_text">
       <h4>Statistics</h4>
         <p>It is possible to <a href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month)}">export the analytics data</a> as a CSV file, which contains all of the information for ${c.month_desc}</p>
+    </li>
+    <li class="widget-container boxed widget_text">
+        <h4>Publisher statistics</h4>
+        <p>You can view statistics about specific publishers at the <a href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='index')}">Publisher Analytics</a> page</p>
 
     </li>
   </py:match>
