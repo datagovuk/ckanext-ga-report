@@ -8,15 +8,14 @@
 
   <py:if test="dataset_count > 0">
     <div class="popular_datasets">
-        <ul class="popular_dataset_list">
+        <ul>
             <py:for each="dataset,views,visits in datasets">
                 <li>
                     ${h.link_to(dataset.title, h.url_for(controller='package', action='read', id=dataset.name))}
                 </li>
             </py:for>
         </ul>
-
-      <p>${h.link_to("More analytics for " + publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='read',id=publisher.name))}</p>
+      <p class="">${h.link_to("More analytics for " + publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='read',id=publisher.name))}</p>
      </div>
   </py:if>
 </html>
