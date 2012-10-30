@@ -3,29 +3,34 @@
   xmlns:xi="http://www.w3.org/2001/XInclude"
   py:strip="">
 
+  <xi:include href="../ga_util.html" />
+
   <py:def function="page_title">Analytics for ${g.site_title}</py:def>
 
- <py:match path="primarysidebar">
+  <py:match path="primarysidebar">
+    <li class="widget-container boxed widget_text">
+      <h4>Publishers</h4>
+      <p>
+          Dataset views records the number of times a specific dataset page has been viewed. Visits records the number of unique site visits.
+      </p>
+      <p>
+          Note: this data does not include API calls.
+      </p>
+    </li>
 
     <li class="widget-container boxed widget_text">
-      <h4>${c.publisher.title}</h4>
-      <p>
-          The table shows the top 20 most viewed datasets belonging to ${c.publisher.title}.
+      <h4>Download</h4>
+      <p><center>
+          <a class="btn button" href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month or 'all')}">Download as CSV</a></center>
       </p>
-      <p>
-          As well as showing the number of views for ${c.month_desc}, it will also show the
-          number of visitors that viewed each dataset.
-      </p>
-       <p>The dataset list page for <a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController', action='read', id=c.publisher.name)}">${c.publisher.title}</a> was viewed ${c.publisher_page_views} times during the selected time period</p>
-       <p>View the <a href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport', action='index')}">publishers</a> leaderboard</p>
     </li>
   </py:match>
 
-  <div py:match="content">
-      <h1>Analytics for ${c.publisher.title}</h1>
 
-      <h2>Top 20 most viewed datasets of ${c.month_desc}</h2>
-      <p><em>Note: this data does not include API calls</em></p>
+  <div py:match="content">
+      <h1>Site Usage</h1>
+
+      ${usage_nav(c.publisher.title, c.publisher)}
 
       <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='read',id=c.publisher.name)}" method="get">
           <div class="controls">

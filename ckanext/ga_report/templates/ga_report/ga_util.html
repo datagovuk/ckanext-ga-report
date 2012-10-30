@@ -1,0 +1,36 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:py="http://genshi.edgewall.org/"
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  py:strip=""
+  >
+
+ <table py:def="publisher_list(groups)" class="groups">
+   <py:for each="group,title in groups">
+   <tr>
+     <td><a href="/publisher/${group.name}">${title}</a></td>
+   </tr>
+   </py:for>
+ </table>
+
+
+<div py:def="usage_nav(active_name,publisher)" id="minornavigation">
+    <div id="minornavigation-bg-left">
+    <div id="minornavigation-bg-right">
+        <ul class="nav nav-pills">
+        <li py:attrs="{'class': 'active' if active_name=='Site-wide' else None}"><a py:attrs="{'class': 'active' if active_name=='Site-wide' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}"><img src="/images/icons/page_white_gear.png" height="16px" width="16px" alt="None" class="inline-icon "/> Site-wide</a></li>
+        <li py:attrs="{'class': 'active' if active_name=='Publishers' else None}">
+                <a py:attrs="{'class': 'active' if active_name=='Publishers' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='index')}"><img src="/images/icons/page_white_gear.png" height="16px" width="16px" alt="None" class="inline-icon "/> Publishers</a>
+        </li>
+        <li py:if="publisher" class="active">
+                <a class="active"  href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='read', id=publisher.name)}"><img src="/images/icons/page_white_gear.png" height="16px" width="16px" alt="None" class="inline-icon "/>${publisher.title}</a>
+        </li>
+
+        </ul>
+    </div>
+    </div>
+</div>
+
+
+</html>

@@ -3,18 +3,34 @@
   xmlns:xi="http://www.w3.org/2001/XInclude"
   py:strip="">
 
+  <xi:include href="../ga_util.html" />
+
   <py:def function="page_title">Publisher Analytics for ${g.site_title}</py:def>
 
   <py:match path="primarysidebar">
     <li class="widget-container boxed widget_text">
       <h4>Publishers</h4>
-      <p>The table shows the top 20 publishers as recorded by page views of datasets owned by that publisher, and the number of visits to each publisher's home page.</p>
+      <p>
+          Dataset views records the number of times a specific dataset page has been viewed. Visits records the number of unique site visits.
+      </p>
+      <p>
+          Note: this data does not include API calls.
+      </p>
+    </li>
+    <li class="widget-container boxed widget_text">
+      <h4>Download</h4>
+      <p><center>
+          <a class="btn button" href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month or 'all')}">Download as CSV</a></center>
+      </p>
     </li>
   </py:match>
 
+
   <div py:match="content">
-      <h1>Publisher Analytics</h1>
-      <h2>The top 20 publishers of ${c.month_desc}</h2>
+      <h1>Site Usage</h1>
+
+      ${usage_nav('Publishers', None)}
+
 
       <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='index')}" method="get">
           <div class="controls">
@@ -60,6 +76,4 @@
   </py:def>
 
 </html>
-
-
 

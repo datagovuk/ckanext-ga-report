@@ -3,26 +3,36 @@
   xmlns:xi="http://www.w3.org/2001/XInclude"
   py:strip="">
 
-  <py:def function="page_title">Site analytics</py:def>
+  <xi:include href="../ga_util.html" />
+
+  <py:def function="page_title">Site usage</py:def>
 
   <py:match path="primarysidebar">
     <li class="widget-container boxed widget_text">
-      <h4>Statistics</h4>
-        <p>It is possible to <a href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month)}">export the analytics data</a> as a CSV file, which contains all of the information for ${c.month_desc}</p>
+      <h4>Site-wide</h4>
+      <p>
+          Note: this data does not include API calls and some values have been rounded up to 2 decimal places.  Where there are a large number of browser versions they have been grouped together.
+      </p>
     </li>
     <li class="widget-container boxed widget_text">
-        <h4>Publisher statistics</h4>
-        <p>You can view statistics about specific publishers at the <a href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='index')}">Publisher Analytics</a> page</p>
-
+      <h4>Download</h4>
+      <p><center>
+          <a class="btn button" href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month or 'all')}">Download as CSV</a></center>
+      </p>
     </li>
+
   </py:match>
 
   <div py:match="content">
-      <h1>Site statistics</h1>
+      <h1>Site Usage</h1>
+
+      ${usage_nav('Site-wide', None)}
 
       <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
           <div class="controls">
           <select name="month">
+                <option value='' py:attrs="{'selected': 'selected' if not c.month else None}">All time</option>
+
               <py:for each="val,desc in c.months">
                 <option value='${val}' py:attrs="{'selected': 'selected' if c.month == val else None}">${desc}</option>
               </py:for>
@@ -54,8 +64,6 @@
                     </tr>
                 </py:for>
                </table>
-
-              <p>* Values are rounded up to 2 decimal places.</p>
         </div>
         <div class="tab-pane" id="browsers">
              <table class="table table-condensed table-bordered table-striped">

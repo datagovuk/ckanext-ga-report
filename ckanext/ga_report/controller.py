@@ -1,5 +1,7 @@
+import re
 import logging
 import operator
+import collections
 from ckan.lib.base import BaseController, c, render, request, response, abort
 
 import sqlalchemy
@@ -30,9 +32,10 @@ class GaReport(BaseController):
     def csv(self, month):
         import csv
 
-        entries = model.Session.query(GA_Stat).\
-            filter(GA_Stat.period_name==month).\
-            order_by('GA_Stat.stat_name, GA_Stat.key').all()
+        q = model.Session.query(GA_Stat)
+        if month != 'all':
+            q = q.filter(GA_Stat.period_name==month)
+        entries = q.order_by('GA_Stat.period_name, GA_Stat.stat_name, GA_Stat.key').all()
 
         response.headers['Content-Type'] = "text/csv; charset=utf-8"
 
@@ -52,26 +55,46 @@ class GaReport(BaseController):
         c.months = _month_details(GA_Stat)
 
         # Work out which month to show, based on query params of the first item
-        c.month = request.params.get('month', c.months[0][0] if c.months else '')
-        c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
+        c.month_desc = 'all time'
+        c.month = request.params.get('month', '')
+        if c.month:
+            c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
-        entries = model.Session.query(GA_Stat).\
-            filter(GA_Stat.stat_name=='Totals').\
-            filter(GA_Stat.period_name==c.month).\
-            order_by('ga_stat.key').all()
+        q = model.Session.query(GA_Stat).\
+            filter(GA_Stat.stat_name=='Totals')
+        if c.month:
+            q = q.filter(GA_Stat.period_name==c.month)
+        entries = q.order_by('ga_stat.key').all()
 
-        c.global_totals = []
-        for e in entries:
-            val = e.value
-            if e.key in ['Average time on site', 'Pages per visit', 'Percent new visits']:
-                val =  "%.2f" % round(float(e.value), 2)
-                if e.key == 'Average time on site':
+        def clean_key(key, val):
+            if key in ['Average time on site', 'Pages per visit', 'Percent new visits']:
+                val =  "%.2f" % round(float(val), 2)
+                if key == 'Average time on site':
                     mins, secs = divmod(float(val), 60)
                     hours, mins = divmod(mins, 60)
                     val = '%02d:%02d:%02d (%s seconds) ' % (hours, mins, secs, val)
-                e.key = '%s *' % e.key
-            c.global_totals.append((e.key, val))
+                key = '%s *' % key
+            if key in ['Bounces', 'Total pageviews']:
+                val = int(val)
+            return key, val
 
+        c.global_totals = []
+        if c.month:
+            for e in entries:
+                key, val = clean_key(e.key, e.value)
+                c.global_totals.append((key, val))
+        else:
+            d = collections.defaultdict(list)
+            for e in entries:
+                d[e.key].append(float(e.value))
+            for k, v in d.iteritems():
+                if k in ['Bounces', 'Total pageviews']:
+                    v = sum(v)
+                else:
+                    v = float(sum(v))/len(v)
+                key, val = clean_key(k,v)
+                c.global_totals.append((key, val))
+                c.global_totals = sorted(c.global_totals, key=operator.itemgetter(0))
 
         keys = {
             'Browser versions': 'browsers',
@@ -81,12 +104,45 @@ class GaReport(BaseController):
             'Country': 'country'
         }
 
+        browser_version_re = re.compile("(.*)\((.*)\)")
         for k, v in keys.iteritems():
-            entries = model.Session.query(GA_Stat).\
-                filter(GA_Stat.stat_name==k).\
-                filter(GA_Stat.period_name==c.month).\
-                order_by('ga_stat.value::int desc').all()
-            setattr(c, v, [(s.key, s.value) for s in entries ])
+
+            def clean_field(key):
+                if k != 'Browser versions':
+                    return key
+                m = browser_version_re.match(key)
+                browser = m.groups()[0].strip()
+                ver = m.groups()[1]
+                parts = ver.split('.')
+                if len(parts) > 1:
+                    if parts[1][0] == '0':
+                        ver = parts[0]
+                    else:
+                        ver = "%s.%s" % (parts[0],parts[1])
+                if browser in ['Safari','Android Browser']:  # Special case complex version nums
+                    ver = parts[0]
+                    if len(ver) > 2:
+                        ver = "%s%sX" % (ver[0], ver[1])
+
+                return "%s (%s)" % (browser, ver,)
+
+            q = model.Session.query(GA_Stat).\
+                filter(GA_Stat.stat_name==k)
+            if c.month:
+                entries = []
+                q = q.filter(GA_Stat.period_name==c.month).\
+                          order_by('ga_stat.value::int desc')
+
+            d = collections.defaultdict(int)
+            for e in q.all():
+                d[clean_field(e.key)] += int(e.value)
+            entries = []
+            for key, val in d.iteritems():
+                entries.append((key,val,))
+            entries = sorted(entries, key=operator.itemgetter(1), reverse=True)
+
+            setattr(c, v, [(k,v) for k,v in entries ])
+
 
 
         return render('ga_report/site/index.html')
