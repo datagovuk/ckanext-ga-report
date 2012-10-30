@@ -1,0 +1,21 @@
+<html xmlns:py="http://genshi.edgewall.org/"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  py:strip="">
+  <py:if test="dataset_count > 0">
+    <div class="popular_datasets">
+        <ul class="popular_dataset_list">
+            <py:for each="dataset,views,visits in datasets">
+                <li>
+                    ${h.link_to(dataset.title, h.url_for(controller='package', action='read', id=dataset.name))}
+                </li>
+            </py:for>
+        </ul>
+
+      <p>${h.link_to("More analytics for " + publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='read',id=publisher.name))}</p>
+     </div>
+  </py:if>
+</html>
+
+
+
