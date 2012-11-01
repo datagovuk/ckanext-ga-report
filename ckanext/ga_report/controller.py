@@ -58,7 +58,7 @@ class GaReport(BaseController):
         c.months = _month_details(GA_Stat)
 
         # Work out which month to show, based on query params of the first item
-        c.month_desc = 'all time'
+        c.month_desc = 'all months'
         c.month = request.params.get('month', '')
         if c.month:
             c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
@@ -240,7 +240,7 @@ class GaPublisherReport(BaseController):
 
         # Work out which month to show, based on query params of the first item
         c.month = request.params.get('month', '')
-        c.month_desc = 'all time'
+        c.month_desc = 'all months'
         if c.month:
             c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
@@ -327,7 +327,7 @@ class GaPublisherReport(BaseController):
         # Work out which month to show, based on query params of the first item
         c.month = request.params.get('month', '')
         if not c.month:
-            c.month_desc = 'all time'
+            c.month_desc = 'all months'
         else:
             c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
