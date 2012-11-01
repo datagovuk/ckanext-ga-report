@@ -40,6 +40,7 @@ class GaReport(BaseController):
         entries = q.order_by('GA_Stat.period_name, GA_Stat.stat_name, GA_Stat.key').all()
 
         response.headers['Content-Type'] = "text/csv; charset=utf-8"
+        response.headers['Content-Disposition'] = str('attachment; filename=stats_%s.csv' % (month,))
 
         writer = csv.writer(response)
         writer.writerow(["Period", "Statistic", "Key", "Value"])
@@ -156,12 +157,10 @@ class GaPublisherReport(BaseController):
     the datasets associated with the publisher.
     """
     def csv(self, month):
-        #q = model.Session.query(GA_Stat)
-        #if month != 'all':
-        #    q = q.filter(GA_Stat.period_name==month)
-        #entries = q.order_by('GA_Stat.period_name, GA_Stat.stat_name, GA_Stat.key').all()
+
         c.month = month if not month =='all' else ''
         response.headers['Content-Type'] = "text/csv; charset=utf-8"
+        response.headers['Content-Disposition'] = str('attachment; filename=publishers_%s.csv' % (month,))
 
         writer = csv.writer(response)
         writer.writerow(["Publisher", "Views", "Visits", "Period Name"])
@@ -183,6 +182,8 @@ class GaPublisherReport(BaseController):
 
         packages = self._get_packages(c.publisher)
         response.headers['Content-Type'] = "text/csv; charset=utf-8"
+        response.headers['Content-Disposition'] = \
+            str('attachment; filename=%s_%s.csv' % (c.publisher.name, month,))
 
         writer = csv.writer(response)
         writer.writerow(["Publisher", "Views", "Visits", "Period Name"])
