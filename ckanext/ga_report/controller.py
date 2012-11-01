@@ -76,8 +76,14 @@ class GaReport(BaseController):
                     mins, secs = divmod(float(val), 60)
                     hours, mins = divmod(mins, 60)
                     val = '%02d:%02d:%02d (%s seconds) ' % (hours, mins, secs, val)
+                if key == 'Percent new visits':
+                    key = 'New visits'
+                    val = "%s%%" % val
             if key in ['Bounces', 'Total pageviews']:
                 val = int(val)
+                if key == 'Total pageviews':
+                    key = 'Total page views'
+
             return key, val
 
         c.global_totals = []
@@ -99,8 +105,10 @@ class GaReport(BaseController):
                 c.global_totals = sorted(c.global_totals, key=operator.itemgetter(0))
 
         keys = {
-            'Browser versions': 'browsers',
-            'Operating Systems versions': 'os',
+            'Browser versions': 'browser_versions',
+            'Browsers': 'browsers',
+            'Operating Systems versions': 'os_versions',
+            'Operating Systems': 'os',
             'Social sources': 'social_networks',
             'Languages': 'languages',
             'Country': 'country'
@@ -143,9 +151,14 @@ class GaReport(BaseController):
                 entries.append((key,val,))
             entries = sorted(entries, key=operator.itemgetter(1), reverse=True)
 
-            setattr(c, v, [(k,v) for k,v in entries ])
+            def percent(num, total):
+                p = 100 * float(num)/float(total)
+                return "%.2f%%" % round(p, 2)
 
-
+            # Get the total for each set of values and then set the value as
+            # a percentage of the total
+            total = sum([num for _,num in entries])
+            setattr(c, v, [(k,percent(v,total)) for k,v in entries ])
 
         return render('ga_report/site/index.html')
 

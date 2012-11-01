@@ -44,8 +44,22 @@
     <div class="tabbable">
       <ul class="nav nav-tabs">
         <li class="active"><a href="#totals" data-toggle="tab">Totals</a></li>
-        <li><a href="#browsers" data-toggle="tab">Browsers</a></li>
-        <li><a href="#os" data-toggle="tab">Operating Systems</a></li>
+        <li class="dropdown">
+            <a href="#browsers" class="dropdown-toggle" data-toggle="dropdown">Browsers
+                <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+                <li><a href="#browsers_names" data-toggle="tab">Browsers</a></li>
+                <li><a href="#browsers_versions" data-toggle="tab">Versions</a></li>
+            </ul>
+        </li>
+        <li class="dropdown">
+            <a href="#browsers" class="dropdown-toggle" data-toggle="dropdown">Operating<br/>Systems
+                <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+                <li><a href="#os" data-toggle="tab">Operating Systems</a></li>
+                <li><a href="#os_versions" data-toggle="tab">Versions</a></li>
+            </ul>
+        </li>
         <li><a href="#social_networks" data-toggle="tab">Social Networks</a></li>
         <li><a href="#languages" data-toggle="tab">Languages</a></li>
         <li><a href="#country" data-toggle="tab">Country</a></li>
@@ -65,75 +79,26 @@
                 </py:for>
                </table>
         </div>
-        <div class="tab-pane" id="browsers">
-             <table class="table table-condensed table-bordered table-striped">
-            	 <tr>
-            	   <th>Name</th>
-            	   <th>Value</th>
-            	 </tr>
-                <py:for each="name, value in c.browsers">
-                    <tr>
-                        <td>${name}</td>
-                        <td>${value}</td>
-                    </tr>
-                </py:for>
-               </table>
-        </div>
-        <div class="tab-pane" id="os">
-             <table class="table table-condensed table-bordered table-striped">
-            	 <tr>
-            	   <th>Name</th>
-            	   <th>Value</th>
-            	 </tr>
-                <py:for each="name, value in c.os">
-                    <tr>
-                        <td>${name}</td>
-                        <td>${value}</td>
-                    </tr>
-                </py:for>
-               </table>
-        </div>
+         <div class="tab-pane" id="browsers_versions">
+             ${stat_table(c.browser_versions)}
+         </div>
+         <div class="tab-pane" id="browsers_names">
+             ${stat_table(c.browsers)}
+         </div>
+         <div class="tab-pane" id="os">
+             ${stat_table(c.os)}
+         </div>
+         <div class="tab-pane" id="os_versions">
+             ${stat_table(c.os_versions)}
+         </div>
         <div class="tab-pane" id="social_networks">
-             <table class="table table-condensed table-bordered table-striped">
-            	 <tr>
-            	   <th>Name</th>
-            	   <th>Value</th>
-            	 </tr>
-                <py:for each="name, value in c.social_networks">
-                    <tr>
-                        <td>${name}</td>
-                        <td>${value}</td>
-                    </tr>
-                </py:for>
-               </table>
+             ${stat_table(c.social_networks)}
         </div>
         <div class="tab-pane" id="languages">
-             <table class="table table-condensed table-bordered table-striped">
-            	 <tr>
-            	   <th>Name</th>
-            	   <th>Value</th>
-            	 </tr>
-                <py:for each="name, value in c.languages">
-                    <tr>
-                        <td>${name}</td>
-                        <td>${value}</td>
-                    </tr>
-                </py:for>
-               </table>
+             ${stat_table(c.languages)}
         </div>
         <div class="tab-pane" id="country">
-             <table class="table table-condensed table-bordered table-striped">
-            	 <tr>
-            	   <th>Name</th>
-            	   <th>Value</th>
-            	 </tr>
-                <py:for each="name, value in c.country">
-                    <tr>
-                        <td>${name}</td>
-                        <td>${value}</td>
-                    </tr>
-                </py:for>
-               </table>
+             ${stat_table(c.country)}
         </div>
 
 
@@ -148,6 +113,7 @@
 
   <py:def function="optional_footer">
     <script type='text/javascript'>
+        $('.dropdown-toggle').dropdown();
         $('.nav-tabs li a').click(function (e) {
           e.preventDefault();
           $(this).tab('show');
