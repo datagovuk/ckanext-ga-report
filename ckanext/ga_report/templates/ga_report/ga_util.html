@@ -15,10 +15,26 @@
  </table>
 
 
-<table py:def="stat_table(items)" class="table table-condensed table-bordered table-striped">
+<table py:def="social_table(items, with_source=False)" class="table table-condensed table-bordered table-striped">
     <tr>
         <th>Name</th>
-        <th>% Views</th>
+        <th py:if="with_source">Source</th>
+        <th>Visits</th>
+    </tr>
+    <py:for each="name, url, source, count in items">
+    <tr>
+        <td><a href="${url}">${name}</a></td>
+        <td py:if="with_source">${source}</td>
+        <td>${count}</td>
+    </tr>
+    </py:for>
+ </table>
+
+
+<table py:def="stat_table(items, title='Views')" class="table table-condensed table-bordered table-striped">
+    <tr>
+        <th>Name</th>
+        <th>% ${title}</th>
     </tr>
     <py:for each="name, value in items">
     <tr>

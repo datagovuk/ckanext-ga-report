@@ -25,7 +25,6 @@
 
   <div py:match="content">
       <h1>Site Usage</h1>
-
       ${usage_nav('Site-wide', None)}
 
       <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
@@ -60,7 +59,16 @@
                 <li><a href="#os_versions" data-toggle="tab">Versions</a></li>
             </ul>
         </li>
-        <li><a href="#social_networks" data-toggle="tab">Social Networks</a></li>
+        <li class="dropdown">
+            <a href="#browsers" class="dropdown-toggle" data-toggle="dropdown">Social Networks
+                <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+                <li><a href="#social_networks" data-toggle="tab">All networks</a></li>
+                <li><a href="#social_referrals_totals" data-toggle="tab">Referral links</a></li>
+            </ul>
+        </li>
+
+        <li><a href="#social_networks" data-toggle="tab"></a></li>
         <li><a href="#languages" data-toggle="tab">Languages</a></li>
         <li><a href="#country" data-toggle="tab">Country</a></li>
       </ul>
@@ -91,8 +99,14 @@
          <div class="tab-pane" id="os_versions">
              ${stat_table(c.os_versions)}
          </div>
+        <div class="tab-pane" id="social_referrals_totals">
+            <p>Number of visits to urls referred from social networks</p>
+            ${social_table(c.social_referrer_totals)}
+        </div>
         <div class="tab-pane" id="social_networks">
-             ${stat_table(c.social_networks)}
+            <p>Percentage of visits referred from these social networks</p>
+
+             ${stat_table(c.social_networks, 'Visits')}
         </div>
         <div class="tab-pane" id="languages">
              ${stat_table(c.languages)}
@@ -118,6 +132,7 @@
           e.preventDefault();
           $(this).tab('show');
         })
+        alert(window.location.hash);
     </script>
   </py:def>
 </html>

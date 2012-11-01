@@ -1,7 +1,7 @@
 import os
 import logging
 import datetime
-
+import collections
 from pylons import config
 
 import ga_model
@@ -94,7 +94,6 @@ class DownloadAnalytics(object):
                      self.get_full_period_name(period_name, period_complete_day),
                      start_date.strftime('%Y %m %d'),
                      end_date.strftime('%Y %m %d'))
-
             data = self.download(start_date, end_date, '~/dataset/[a-z0-9-_]+')
             log.info('Storing Dataset Analytics for period "%s"',
                      self.get_full_period_name(period_name, period_complete_day))
@@ -107,6 +106,33 @@ class DownloadAnalytics(object):
 
             ga_model.update_publisher_stats(period_name) # about 30 seconds.
             self.sitewide_stats( period_name )
+
+            self.update_social_info(period_name, start_date, end_date)
+
+    def update_social_info(self, period_name, start_date, end_date):
+        start_date = start_date.strftime('%Y-%m-%d')
+        end_date = end_date.strftime('%Y-%m-%d')
+        query = 'ga:hasSocialSourceReferral=~Yes$'
+        metrics = 'ga:entrances'
+        sort = '-ga:entrances'
+
+        # Supported query params at
+        # https://developers.google.com/analytics/devguides/reporting/core/v3/reference
+        results = self.service.data().ga().get(
+                                 ids='ga:' + self.profile_id,
+                                 filters=query,
+                                 start_date=start_date,
+                                 metrics=metrics,
+                                 sort=sort,
+                                 dimensions="ga:landingPagePath,ga:socialNetwork",
+                                 max_results=10000,
+                                 end_date=end_date).execute()
+        data = collections.defaultdict(list)
+        rows = results.get('rows',[])
+        for row in rows:
+            from ga_model import _normalize_url
+            data[_normalize_url(row[0])].append( (row[1], int(row[2]),) )
+        ga_model.update_social(period_name, data)
 
 
     def download(self, start_date, end_date, path='~/dataset/[a-z0-9-_]+'):
@@ -176,12 +202,12 @@ class DownloadAnalytics(object):
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')
-        ga_model.update_sitewide_stats(period_name, "Totals", {'Total pageviews': result_data[0][0]})
+        ga_model.update_sitewide_stats(period_name, "Totals", {'Total page views': result_data[0][0]})
 
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
                                  start_date=start_date,
-                                 metrics='ga:pageviewsPerVisit,ga:bounces,ga:avgTimeOnSite,ga:percentNewVisits',
+                                 metrics='ga:pageviewsPerVisit,ga:bounces,ga:avgTimeOnSite,ga:percentNewVisits,ga:visitors',
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')
@@ -189,7 +215,8 @@ class DownloadAnalytics(object):
             'Pages per visit': result_data[0][0],
             'Bounces': result_data[0][1],
             'Average time on site': result_data[0][2],
-            'Percent new visits': result_data[0][3],
+            'New visits': result_data[0][3],
+            'Total visits': result_data[0][4],
         }
         ga_model.update_sitewide_stats(period_name, "Totals", data)
 

@@ -4,12 +4,12 @@ import sys
 import logging
 import operator
 import collections
-from ckan.lib.base import BaseController, c, render, request, response, abort
+from ckan.lib.base import (BaseController, c, g, render, request, response, abort)
 
 import sqlalchemy
 from sqlalchemy import func, cast, Integer
 import ckan.model as model
-from ga_model import GA_Url, GA_Stat
+from ga_model import GA_Url, GA_Stat, GA_ReferralStat
 
 log = logging.getLogger('ckanext.ga-report')
 
@@ -70,19 +70,16 @@ class GaReport(BaseController):
         entries = q.order_by('ga_stat.key').all()
 
         def clean_key(key, val):
-            if key in ['Average time on site', 'Pages per visit', 'Percent new visits']:
+            if key in ['Average time on site', 'Pages per visit', 'New visits']:
                 val =  "%.2f" % round(float(val), 2)
                 if key == 'Average time on site':
                     mins, secs = divmod(float(val), 60)
                     hours, mins = divmod(mins, 60)
                     val = '%02d:%02d:%02d (%s seconds) ' % (hours, mins, secs, val)
-                if key == 'Percent new visits':
-                    key = 'New visits'
+                if key == 'New visits':
                     val = "%s%%" % val
-            if key in ['Bounces', 'Total pageviews']:
+            if key in ['Bounces', 'Total page views', 'Total visits']:
                 val = int(val)
-                if key == 'Total pageviews':
-                    key = 'Total page views'
 
             return key, val
 
@@ -96,7 +93,7 @@ class GaReport(BaseController):
             for e in entries:
                 d[e.key].append(float(e.value))
             for k, v in d.iteritems():
-                if k in ['Bounces', 'Total pageviews']:
+                if k in ['Bounces', 'Total page views', 'Total visits']:
                     v = sum(v)
                 else:
                     v = float(sum(v))/len(v)
@@ -113,6 +110,30 @@ class GaReport(BaseController):
             'Languages': 'languages',
             'Country': 'country'
         }
+
+        def shorten_name(name, length=60):
+            return (name[:length] + '..') if len(name) > 60 else name
+
+        def fill_out_url(url):
+            import urlparse
+            return urlparse.urljoin(g.site_url, url)
+
+        c.social_referrer_totals, c.social_referrers = [], []
+        q = model.Session.query(GA_ReferralStat)
+        q = q.filter(GA_ReferralStat.period_name==c.month) if c.month else q
+        q = q.order_by('ga_referrer.count::int desc')
+        for entry in q.all():
+            c.social_referrers.append((shorten_name(entry.url), fill_out_url(entry.url),
+                                       entry.source,entry.count))
+
+        q = model.Session.query(GA_ReferralStat.url,
+                                func.sum(GA_ReferralStat.count).label('count'))
+        q = q.filter(GA_ReferralStat.period_name==c.month) if c.month else q
+        q = q.order_by('count desc').group_by(GA_ReferralStat.url)
+        for entry in q.all():
+            c.social_referrer_totals.append((shorten_name(entry[0]), fill_out_url(entry[0]),'',
+                                            entry[1]))
+
 
         browser_version_re = re.compile("(.*)\((.*)\)")
         for k, v in keys.iteritems():
@@ -157,7 +178,10 @@ class GaReport(BaseController):
 
             # Get the total for each set of values and then set the value as
             # a percentage of the total
-            total = sum([num for _,num in entries])
+            if k == 'Social sources':
+                total = sum([x for n,x in c.global_totals if n == 'Total visits'])
+            else:
+                total = sum([num for _,num in entries])
             setattr(c, v, [(k,percent(v,total)) for k,v in entries ])
 
         return render('ga_report/site/index.html')

@@ -13,6 +13,8 @@ from ckan.lib.base import *
 def make_uuid():
     return unicode(uuid.uuid4())
 
+metadata = MetaData()
+
 
 
 class GA_Url(object):
@@ -21,20 +23,6 @@ class GA_Url(object):
         for k,v in kwargs.items():
             setattr(self, k, v)
 
-class GA_Stat(object):
-
-    def __init__(self, **kwargs):
-        for k,v in kwargs.items():
-            setattr(self, k, v)
-
-class GA_Publisher(object):
-
-    def __init__(self, **kwargs):
-        for k,v in kwargs.items():
-            setattr(self, k, v)
-
-
-metadata = MetaData()
 url_table = Table('ga_url', metadata,
                       Column('id', types.UnicodeText, primary_key=True,
                              default=make_uuid),
@@ -47,6 +35,13 @@ url_table = Table('ga_url', metadata,
                 )
 mapper(GA_Url, url_table)
 
+
+class GA_Stat(object):
+
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            setattr(self, k, v)
+
 stat_table = Table('ga_stat', metadata,
                   Column('id', types.UnicodeText, primary_key=True,
                          default=make_uuid),
@@ -56,6 +51,12 @@ stat_table = Table('ga_stat', metadata,
                   Column('value', types.UnicodeText), )
 mapper(GA_Stat, stat_table)
 
+
+class GA_Publisher(object):
+
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            setattr(self, k, v)
 
 pub_table = Table('ga_publisher', metadata,
                   Column('id', types.UnicodeText, primary_key=True,
@@ -69,6 +70,24 @@ pub_table = Table('ga_publisher', metadata,
                   Column('parent', types.UnicodeText),
 )
 mapper(GA_Publisher, pub_table)
+
+
+class GA_ReferralStat(object):
+
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            setattr(self, k, v)
+
+referrer_table = Table('ga_referrer', metadata,
+                      Column('id', types.UnicodeText, primary_key=True,
+                             default=make_uuid),
+                      Column('period_name', types.UnicodeText),
+                      Column('source', types.UnicodeText),
+                      Column('url', types.UnicodeText),
+                      Column('count', types.Integer),
+                )
+mapper(GA_ReferralStat, referrer_table)
+
 
 
 def init_tables():
@@ -93,8 +112,9 @@ def _normalize_url(url):
     >>> normalize_url('http://data.gov.uk/dataset/weekly_fuel_prices')
     '/dataset/weekly_fuel_prices'
     '''
-    url = re.sub('https?://(www\.)?data.gov.uk', '', url)
-    return url
+    # Deliberately leaving a /
+    url = url.replace('http:/','')
+    return '/' + '/'.join(url.split('/')[2:])
 
 
 def _get_department_id_of_url(url):
@@ -167,6 +187,33 @@ def update_url_stats(period_name, period_complete_day, url_data):
         model.Session.commit()
 
 
+def update_social(period_name, data):
+    # Clean up first.
+    model.Session.query(GA_ReferralStat).\
+        filter(GA_ReferralStat.period_name==period_name).delete()
+
+    for url,data in data.iteritems():
+        for entry in data:
+            source = entry[0]
+            count = entry[1]
+
+            item = model.Session.query(GA_ReferralStat).\
+                filter(GA_ReferralStat.period_name==period_name).\
+                filter(GA_ReferralStat.source==source).\
+                filter(GA_ReferralStat.url==url).first()
+            if item:
+                item.count = item.count + count
+                model.Session.add(item)
+            else:
+                # create the row
+                values = {'id': make_uuid(),
+                          'period_name': period_name,
+                          'source': source,
+                          'url': url,
+                          'count': count,
+                         }
+                model.Session.add(GA_ReferralStat(**values))
+            model.Session.commit()
 
 def update_publisher_stats(period_name):
     """
