@@ -76,7 +76,6 @@ class GaReport(BaseController):
                     mins, secs = divmod(float(val), 60)
                     hours, mins = divmod(mins, 60)
                     val = '%02d:%02d:%02d (%s seconds) ' % (hours, mins, secs, val)
-                key = '%s *' % key
             if key in ['Bounces', 'Total pageviews']:
                 val = int(val)
             return key, val
