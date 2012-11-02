@@ -201,7 +201,7 @@ class GaPublisherReport(BaseController):
         writer = csv.writer(response)
         writer.writerow(["Publisher", "Views", "Visits", "Period Name"])
 
-        for publisher,view,visit in self._get_publishers(None):
+        for publisher,view,visit in _get_publishers(None):
             writer.writerow([publisher.title.encode('utf-8'),
                              view,
                              visit,
@@ -244,38 +244,10 @@ class GaPublisherReport(BaseController):
         if c.month:
             c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
-        c.top_publishers = self._get_publishers()
+        c.top_publishers = _get_publishers()
 
         return render('ga_report/publisher/index.html')
 
-    def _get_publishers(self, limit=20):
-        connection = model.Session.connection()
-        q = """
-            select department_id, sum(pageviews::int) views, sum(visitors::int) visits
-            from ga_url
-            where department_id <> ''"""
-        if c.month:
-            q = q + """
-                    and period_name=%s
-            """
-        q = q + """
-                group by department_id order by views desc
-            """
-        if limit:
-            q = q + " limit %s;" % (limit)
-
-        # Add this back (before and period_name =%s) if you want to ignore publisher
-        # homepage views
-        # and not url like '/publisher/%%'
-
-        top_publishers = []
-        res = connection.execute(q, c.month)
-
-        for row in res:
-            g = model.Group.get(row[0])
-            if g:
-                top_publishers.append((g, row[1], row[2]))
-        return top_publishers
 
     def _get_packages(self, publisher, count=-1):
         if count == -1:
@@ -344,3 +316,32 @@ class GaPublisherReport(BaseController):
         c.top_packages = self._get_packages(c.publisher, 20)
 
         return render('ga_report/publisher/read.html')
+
+def _get_publishers(limit=20):
+    connection = model.Session.connection()
+    q = """
+        select department_id, sum(pageviews::int) views, sum(visitors::int) visits
+        from ga_url
+        where department_id <> ''"""
+    if c.month:
+        q = q + """
+                and period_name=%s
+        """
+    q = q + """
+            group by department_id order by views desc
+        """
+    if limit:
+        q = q + " limit %s;" % (limit)
+
+    # Add this back (before and period_name =%s) if you want to ignore publisher
+    # homepage views
+    # and not url like '/publisher/%%'
+
+    top_publishers = []
+    res = connection.execute(q, c.month)
+
+    for row in res:
+        g = model.Group.get(row[0])
+        if g:
+            top_publishers.append((g, row[1], row[2]))
+    return top_publishers

@@ -3,6 +3,9 @@ import ckan.lib.helpers as h
 import ckan.plugins as p
 from ckan.plugins import implements, toolkit
 
+from ckanext.ga_report.helpers import (most_popular_datasets,
+                                       popular_datasets)
+
 log = logging.getLogger('ckanext.ga-report')
 
 class GAReportPlugin(p.SingletonPlugin):
@@ -19,9 +22,9 @@ class GAReportPlugin(p.SingletonPlugin):
         A dictionary of extra helpers that will be available to provide
         ga report info to templates.
         """
-        from ckanext.ga_report.helpers import most_popular_datasets
         return {
             'ga_report_installed': lambda: True,
+            'popular_datasets': popular_datasets,
             'most_popular_datasets': most_popular_datasets,
         }
 
