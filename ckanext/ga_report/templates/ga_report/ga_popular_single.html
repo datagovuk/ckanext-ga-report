@@ -1,0 +1,22 @@
+<html xmlns:py="http://genshi.edgewall.org/"
+  xmlns:i18n="http://genshi.edgewall.org/i18n"
+  xmlns:xi="http://www.w3.org/2001/XInclude"
+  py:strip="">
+
+
+<div class="popular_datasets">
+    <h2>Featured dataset</h2>
+
+    <h3>${h.link_to(dataset.title, h.url_for(controller='package', action='read', id=dataset.name))}</h3>        <div>${h.truncate(dataset.notes, length=200, whole_word=True)}</div>
+    <p></p>
+    <div>
+<a href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='index')}" class="btn btn-primary">More popular datasets</a>
+<a href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" class="btn btn-primary">All usage data</a>
+    </div>
+ </div>
+
+
+</html>
+
+
+

@@ -27,6 +27,30 @@ def popular_datasets(count=10):
     }
     return base.render_snippet('ga_report/ga_popular_datasets.html', **ctx)
 
+def single_popular_dataset(top=20):
+    import random
+
+    datasets = {}
+    rand = random.randrange(0, top)
+    entry = model.Session.query(GA_Url).\
+        filter(GA_Url.url.like('/dataset/%')).\
+        order_by('ga_url.pageviews::int desc')[rand]
+
+
+    dataset = None
+    while not dataset:
+        dataset = model.Package.get(entry.url[len('/dataset/'):])
+        if dataset and not dataset.state == 'active':
+            dataset = None
+        else:
+            publisher = model.Group.get(entry.department_id)
+
+    ctx = {
+        'dataset': dataset,
+        'publisher': publisher
+    }
+    return base.render_snippet('ga_report/ga_popular_single.html', **ctx)
+
 
 def most_popular_datasets(publisher, count=20):
 

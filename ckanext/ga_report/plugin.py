@@ -4,7 +4,8 @@ import ckan.plugins as p
 from ckan.plugins import implements, toolkit
 
 from ckanext.ga_report.helpers import (most_popular_datasets,
-                                       popular_datasets)
+                                       popular_datasets,
+                                       single_popular_dataset)
 
 log = logging.getLogger('ckanext.ga-report')
 
@@ -26,6 +27,7 @@ class GAReportPlugin(p.SingletonPlugin):
             'ga_report_installed': lambda: True,
             'popular_datasets': popular_datasets,
             'most_popular_datasets': most_popular_datasets,
+            'single_popular_dataset': single_popular_dataset
         }
 
     def after_map(self, map):
