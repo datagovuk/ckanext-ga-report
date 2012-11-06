@@ -147,7 +147,7 @@ class DownloadAnalytics(object):
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
         query = 'ga:pagePath=%s$' % path
-        metrics = 'ga:uniquePageviews, ga:visitors'
+        metrics = 'ga:uniquePageviews, ga:visits'
         sort = '-ga:uniquePageviews'
 
         # Supported query params at
@@ -209,7 +209,7 @@ class DownloadAnalytics(object):
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
                                  start_date=start_date,
-                                 metrics='ga:pageviewsPerVisit,ga:avgTimeOnSite,ga:percentNewVisits,ga:visitors',
+                                 metrics='ga:pageviewsPerVisit,ga:avgTimeOnSite,ga:percentNewVisits,ga:visits',
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')

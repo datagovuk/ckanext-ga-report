@@ -255,9 +255,7 @@ class GaDatasetReport(BaseController):
                     log.warning('Could not find package "%s"', package_name)
         else:
             ds = {}
-            for entry in q:
-                if len(ds) >= count:
-                    break
+            for entry in q.limit(count):
                 package_name = entry.url[len('/dataset/'):]
                 p = model.Package.get(package_name)
                 if p:
