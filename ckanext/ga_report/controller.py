@@ -70,15 +70,15 @@ class GaReport(BaseController):
         entries = q.order_by('ga_stat.key').all()
 
         def clean_key(key, val):
-            if key in ['Average time on site', 'Pages per visit', 'New visits']:
+            if key in ['Average time on site', 'Pages per visit', 'New visits', 'Bounces']:
                 val =  "%.2f" % round(float(val), 2)
                 if key == 'Average time on site':
                     mins, secs = divmod(float(val), 60)
                     hours, mins = divmod(mins, 60)
                     val = '%02d:%02d:%02d (%s seconds) ' % (hours, mins, secs, val)
-                if key == 'New visits':
+                if key in ['New visits','Bounces']:
                     val = "%s%%" % val
-            if key in ['Bounces', 'Total page views', 'Total visits']:
+            if key in ['Total page views', 'Total visits']:
                 val = int(val)
 
             return key, val
@@ -93,11 +93,12 @@ class GaReport(BaseController):
             for e in entries:
                 d[e.key].append(float(e.value))
             for k, v in d.iteritems():
-                if k in ['Bounces', 'Total page views', 'Total visits']:
+                if k in ['Total page views', 'Total visits']:
                     v = sum(v)
                 else:
                     v = float(sum(v))/len(v)
                 key, val = clean_key(k,v)
+
                 c.global_totals.append((key, val))
                 c.global_totals = sorted(c.global_totals, key=operator.itemgetter(0))
 
@@ -134,29 +135,7 @@ class GaReport(BaseController):
             c.social_referrer_totals.append((shorten_name(entry[0]), fill_out_url(entry[0]),'',
                                             entry[1]))
 
-
-        browser_version_re = re.compile("(.*)\((.*)\)")
         for k, v in keys.iteritems():
-
-            def clean_field(key):
-                if k != 'Browser versions':
-                    return key
-                m = browser_version_re.match(key)
-                browser = m.groups()[0].strip()
-                ver = m.groups()[1]
-                parts = ver.split('.')
-                if len(parts) > 1:
-                    if parts[1][0] == '0':
-                        ver = parts[0]
-                    else:
-                        ver = "%s.%s" % (parts[0],parts[1])
-                if browser in ['Safari','Android Browser']:  # Special case complex version nums
-                    ver = parts[0]
-                    if len(ver) > 2:
-                        ver = "%s%sX" % (ver[0], ver[1])
-
-                return "%s (%s)" % (browser, ver,)
-
             q = model.Session.query(GA_Stat).\
                 filter(GA_Stat.stat_name==k)
             if c.month:
@@ -172,17 +151,13 @@ class GaReport(BaseController):
                 entries.append((key,val,))
             entries = sorted(entries, key=operator.itemgetter(1), reverse=True)
 
-            def percent(num, total):
-                p = 100 * float(num)/float(total)
-                return "%.2f%%" % round(p, 2)
-
             # Get the total for each set of values and then set the value as
             # a percentage of the total
             if k == 'Social sources':
                 total = sum([x for n,x in c.global_totals if n == 'Total visits'])
             else:
                 total = sum([num for _,num in entries])
-            setattr(c, v, [(k,percent(v,total)) for k,v in entries ])
+            setattr(c, v, [(k,_percent(v,total)) for k,v in entries ])
 
         return render('ga_report/site/index.html')
 
@@ -392,3 +367,7 @@ def _get_publishers():
                order_by(model.Group.name):
         publishers.append((pub.name, pub.title))
     return publishers
+
+def _percent(num, total):
+    p = 100 * float(num)/float(total)
+    return "%.2f%%" % round(p, 2)
