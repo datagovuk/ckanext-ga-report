@@ -33,6 +33,10 @@ Installation
       googleanalytics.id = UA-1010101-1
       googleanalytics.account = Account name (i.e. data.gov.uk, see top level item at https://www.google.com/analytics)
       ga-report.period = monthly
+      ga-report.bounce_url = /data
+
+   The ga-report.bounce_url specifies the path to use when calculating bounces. For DGU this is /data
+   but you may want to set this to /.
 
    Note that your credentials will be readable by system administrators on your server. Rather than use sensitive account details, it is suggested you give access to the GA account to a new Google account that you create just for this purpose.
 

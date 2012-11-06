@@ -94,6 +94,7 @@ class DownloadAnalytics(object):
                      self.get_full_period_name(period_name, period_complete_day),
                      start_date.strftime('%Y %m %d'),
                      end_date.strftime('%Y %m %d'))
+
             data = self.download(start_date, end_date, '~/dataset/[a-z0-9-_]+')
             log.info('Storing Dataset Analytics for period "%s"',
                      self.get_full_period_name(period_name, period_complete_day))
@@ -155,11 +156,6 @@ class DownloadAnalytics(object):
                                  max_results=10000,
                                  end_date=end_date).execute()
 
-        if os.getenv('DEBUG'):
-            import pprint
-            pprint.pprint(results)
-            print 'Total results: %s' % results.get('totalResults')
-
         packages = []
         for entry in results.get('rows'):
             (loc,pageviews,visits) = entry
@@ -207,18 +203,37 @@ class DownloadAnalytics(object):
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
                                  start_date=start_date,
-                                 metrics='ga:pageviewsPerVisit,ga:bounces,ga:avgTimeOnSite,ga:percentNewVisits,ga:visitors',
+                                 metrics='ga:pageviewsPerVisit,ga:avgTimeOnSite,ga:percentNewVisits,ga:visitors',
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')
         data = {
             'Pages per visit': result_data[0][0],
-            'Bounces': result_data[0][1],
-            'Average time on site': result_data[0][2],
-            'New visits': result_data[0][3],
-            'Total visits': result_data[0][4],
+            'Average time on site': result_data[0][1],
+            'New visits': result_data[0][2],
+            'Total visits': result_data[0][3],
         }
         ga_model.update_sitewide_stats(period_name, "Totals", data)
+
+        # Bounces from /data. This url is specified in configuration because
+        # for DGU we don't want /.
+        path = config.get('ga-report.bounce_url','/')
+        print path
+        results = self.service.data().ga().get(
+                                 ids='ga:' + self.profile_id,
+                                 filters='ga:pagePath=~%s$' % (path,),
+                                 start_date=start_date,
+                                 metrics='ga:bounces,ga:uniquePageviews',
+                                 dimensions='ga:pagePath',
+                                 max_results=10000,
+                                 end_date=end_date).execute()
+        result_data = results.get('rows')
+        for results in result_data:
+            if results[0] == path:
+                bounce, total = [float(x) for x in results[1:]]
+                pct = 100 * bounce/total
+                print "%d bounces from %d total == %s" % (bounce, total, pct)
+                ga_model.update_sitewide_stats(period_name, "Totals", {'Bounces': pct})
 
 
     def _locale_stats(self, start_date, end_date, period_name):
