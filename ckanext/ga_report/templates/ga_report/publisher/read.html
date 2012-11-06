@@ -5,46 +5,46 @@
 
   <xi:include href="../ga_util.html" />
 
-  <py:def function="page_title">Analytics for ${g.site_title}</py:def>
+  <py:def function="page_title">Usage by Dataset</py:def>
 
   <py:match path="primarysidebar">
     <li class="widget-container boxed widget_text">
-      <h4>Publishers</h4>
-      <p>
-          Dataset views records the number of times a specific dataset page has been viewed for <a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController',action='read',id=c.publisher.name)}">${c.publisher.title}</a>. Visits records the number of unique site visits.
-      </p>
-      <p>
-          Note: this data does not include API calls.
-      </p>
-    </li>
-
-    <li class="widget-container boxed widget_text">
       <h4>Download</h4>
       <p><center>
-          <a class="btn button" href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='publisher_csv',id=c.publisher.name,month=c.month or 'all')}">Download as CSV</a></center>
+          <a class="btn button btn-primary" href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='dataset_csv',id=c.publisher_name or 'all',month=c.month or 'all')}">Download as CSV</a></center>
       </p>
     </li>
+    <xi:include href="../notes.html" />
   </py:match>
 
 
   <div py:match="content">
-      <h1>Site Usage</h1>
+     <h1>Site Usage</h1>
 
-      ${usage_nav(c.publisher.title, c.publisher)}
+     ${usage_nav('Datasets')}
 
-      <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='read',id=c.publisher.name)}" method="get">
-          <div class="controls">
+     <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}" method="get">
+        <div class="controls">
           <select name="month">
                 <option value='' py:attrs="{'selected': 'selected' if not c.month else None}">All months</option>
               <py:for each="val,desc in c.months">
                 <option value='${val}' py:attrs="{'selected': 'selected' if c.month == val else None}">${desc}</option>
               </py:for>
           </select>
-           <input class="btn button" type='submit' value="Update"/>
-          </div>
-       </form>
+          <select name="publisher">
+                <option value='' py:attrs="{'selected': 'selected' if not c.publisher else None}">All publishers</option>
+              <py:for each="val,desc in c.publishers">
+                <option value='${val}' py:attrs="{'selected': 'selected' if c.publisher_name == val else None}">${desc}</option>
+              </py:for>
+          </select>
+          <input class="btn button btn-primary" type='submit' value="Update"/>
+        </div>
+     </form>
 
-       <table class="table table-condensed table-bordered table-striped">
+     <h3 py:if="c.publisher"><a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController',action='read',id=c.publisher.name)}">${c.publisher.title}</a></h3>
+
+     <p py:if="not c.top_packages">No page views in this period</p>
+     <table py:if="c.top_packages" class="table table-condensed table-bordered table-striped">
 	 <tr>
 	   <th>Dataset</th>
 	   <th>Views</th>
@@ -58,7 +58,7 @@
 	    <td>${visits}</td>
 	  </tr>
         </py:for>
-       </table>
+     </table>
 
 
   </div>

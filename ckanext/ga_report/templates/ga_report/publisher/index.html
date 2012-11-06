@@ -5,24 +5,16 @@
 
   <xi:include href="../ga_util.html" />
 
-  <py:def function="page_title">Publisher Analytics for ${g.site_title}</py:def>
+  <py:def function="page_title">Usage by Publisher</py:def>
 
   <py:match path="primarysidebar">
     <li class="widget-container boxed widget_text">
-      <h4>Publishers</h4>
-      <p>
-          Dataset views records the number of times a specific dataset page has been viewed. Visits records the number of unique site visits.
-      </p>
-      <p>
-          Note: this data does not include API calls.
-      </p>
-    </li>
-    <li class="widget-container boxed widget_text">
       <h4>Download</h4>
       <p><center>
-          <a class="btn button" href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='csv',month=c.month or 'all')}">Download as CSV</a></center>
+          <a class="btn button btn-primary" href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publisher_csv',month=c.month or 'all')}">Download as CSV</a></center>
       </p>
     </li>
+    <xi:include href="../notes.html" />
   </py:match>
 
 
@@ -30,10 +22,10 @@
 
       <h1>Site Usage</h1>
 
-      ${usage_nav('Publishers', None)}
+      ${usage_nav('Publishers')}
 
 
-      <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='index')}" method="get">
+      <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}" method="get">
           <div class="controls">
           <select name="month">
                 <option value='' py:attrs="{'selected': 'selected' if not c.month else None}">All months</option>
@@ -42,7 +34,7 @@
                 <option value='${val}' py:attrs="{'selected': 'selected' if c.month == val else None}">${desc}</option>
               </py:for>
           </select>
-           <input class="btn button" type='submit' value="Update"/>
+           <input class="btn button btn-primary" type='submit' value="Update"/>
           </div>
        </form>
 
@@ -50,11 +42,11 @@
 	 <tr>
 	   <th>Publisher</th>
 	   <th>Dataset Views</th>
-	   <th>Visits</th>
+	   <th>Dataset Visits</th>
 	 </tr>
         <py:for each="publisher, views, visits in c.top_publishers">
 	  <tr>
-	    <td>${h.link_to(publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport', action='read', id=publisher.name))}
+	    <td>${h.link_to(publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport', action='read_publisher', id=publisher.name))}
 	    </td>
 	    <td>${views}</td>
 	    <td>${visits}</td>

@@ -31,10 +31,8 @@ Installation
 2. Ensure you development.ini (or similar) contains the info about your Google Analytics account and configuration::
 
       googleanalytics.id = UA-1010101-1
-      googleanalytics.account = Account name (i.e. data.gov.uk, see top level item at https://www.google.com/analytics)
+      googleanalytics.account = Account name (e.g. data.gov.uk, see top level item at https://www.google.com/analytics)
       ga-report.period = monthly
-
-   Note that your credentials will be readable by system administrators on your server. Rather than use sensitive account details, it is suggested you give access to the GA account to a new Google account that you create just for this purpose.
 
 3. Set up this extension's database tables using a paster command. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file)::
 
@@ -43,6 +41,12 @@ Installation
 4. Enable the extension in your CKAN config file by adding it to ``ckan.plugins``::
 
     ckan.plugins = ga-report
+
+Problem shooting
+----------------
+
+* ``(ProgrammingError) relation "ga_url" does not exist``
+  This means that the ``paster initdb`` step has not been run successfully. Refer to the installation instructions for this extension.
 
 
 Authorization
@@ -79,7 +83,7 @@ giving permission in the browser::
 Tutorial
 --------
 
-Download some GA data and store it in CKAN's db. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file) and specifying the name of your auth file (token.dat by default) from the previous step::
+Download some GA data and store it in CKAN's database. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file) and specifying the name of your auth file (token.dat by default) from the previous step::
 
     $ paster loadanalytics token.dat latest --config=../ckan/development.ini
 

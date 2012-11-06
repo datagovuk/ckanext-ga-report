@@ -26,7 +26,7 @@ setup(
 	entry_points=\
 	"""
         [ckan.plugins]
-	# Add plugins here, eg
+	# Add plugins here
 	ga-report=ckanext.ga_report.plugin:GAReportPlugin
 
         [paste.paster_command]

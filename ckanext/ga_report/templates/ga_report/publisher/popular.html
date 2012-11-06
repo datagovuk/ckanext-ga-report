@@ -3,7 +3,7 @@
   xmlns:xi="http://www.w3.org/2001/XInclude"
   py:strip="">
   <py:if test="dataset_count == 0">
-    <p>We do not currently have analytics data for ${publisher.title}</p>
+    <p>We do not currently have usage data for ${publisher.title}</p>
   </py:if>
 
   <py:if test="dataset_count > 0">
@@ -15,7 +15,7 @@
                 </li>
             </py:for>
         </ul>
-      <p class="">${h.link_to("More analytics for " + publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='read',id=publisher.name))}</p>
+      <p class="">${h.link_to("More usage data for " + publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read_publisher',id=publisher.name))}</p>
      </div>
   </py:if>
 </html>

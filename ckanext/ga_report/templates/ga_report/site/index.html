@@ -9,23 +9,18 @@
 
   <py:match path="primarysidebar">
     <li class="widget-container boxed widget_text">
-      <h4>Site-wide</h4>
-      <p>
-          Note: this data does not include API calls and some values have been rounded up to 2 decimal places.  Where there are a large number of browser versions they have been grouped together.
-      </p>
-    </li>
-    <li class="widget-container boxed widget_text">
       <h4>Download</h4>
       <p><center>
-          <a class="btn button" href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month or 'all')}">Download as CSV</a></center>
+          <a class="btn button btn-primary" href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month or 'all')}">Download as CSV</a></center>
       </p>
     </li>
+    <xi:include href="../notes.html" />
 
   </py:match>
 
   <div py:match="content">
       <h1>Site Usage</h1>
-      ${usage_nav('Site-wide', None)}
+      ${usage_nav('Site-wide')}
 
       <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
           <div class="controls">
@@ -36,7 +31,7 @@
                 <option value='${val}' py:attrs="{'selected': 'selected' if c.month == val else None}">${desc}</option>
               </py:for>
           </select>
-           <input class="btn button" type='submit' value="Update"/>
+           <input class="btn button btn-primary" type='submit' value="Update"/>
           </div>
        </form>
 
@@ -88,6 +83,7 @@
                </table>
         </div>
          <div class="tab-pane" id="browsers_versions">
+             <p>Note: Where a browser has a large number of versions, these have been grouped together.</p>
              ${stat_table(c.browser_versions)}
          </div>
          <div class="tab-pane" id="browsers_names">
@@ -100,11 +96,11 @@
              ${stat_table(c.os_versions)}
          </div>
         <div class="tab-pane" id="social_referrals_totals">
-            <p>Number of visits to urls referred from social networks</p>
+            <p>Number of visits that were referred from social networks</p>
             ${social_table(c.social_referrer_totals)}
         </div>
         <div class="tab-pane" id="social_networks">
-            <p>Percentage of visits referred from these social networks</p>
+            <p>Percentage of visits that were referred from these social networks</p>
 
              ${stat_table(c.social_networks, 'Visits')}
         </div>

@@ -36,19 +36,18 @@
  </table>
 
 
-<div py:def="usage_nav(active_name,publisher)" id="minornavigation">
+<div py:def="usage_nav(active_name)" id="minornavigation">
     <div id="minornavigation-bg-left">
     <div id="minornavigation-bg-right">
-        <ul class="nav nav-pills">
+      <ul class="nav nav-pills">
         <li py:attrs="{'class': 'active' if active_name=='Site-wide' else None}"><a py:attrs="{'class': 'active' if active_name=='Site-wide' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Site-wide</a></li>
         <li py:attrs="{'class': 'active' if active_name=='Publishers' else None}">
-                <a py:attrs="{'class': 'active' if active_name=='Publishers' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='index')}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Publishers</a>
+                <a py:attrs="{'class': 'active' if active_name=='Publishers' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Publishers</a>
         </li>
-        <li py:if="publisher" class="active">
-                <a class="active"  href="${h.url_for(controller='ckanext.ga_report.controller:GaPublisherReport',action='read', id=publisher.name)}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/>${publisher.title}</a>
+        <li py:attrs="{'class': 'active' if active_name=='Datasets' else None}">
+                <a py:attrs="{'class': 'active' if active_name=='Datasets' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Datasets</a>
         </li>
-
-        </ul>
+      </ul>
     </div>
     </div>
 </div>

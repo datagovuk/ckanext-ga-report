@@ -73,6 +73,14 @@ class LoadAnalytics(CkanCommand):
     max_args = 2
     min_args = 1
 
+    def __init__(self, name):
+        super(LoadAnalytics, self).__init__(name)
+        self.parser.add_option('-d', '--delete-first',
+                               action='store_true',
+                               default=False,
+                               dest='delete_first',
+                               help='Delete data for the period first')
+
     def command(self):
         self._load_config()
 
@@ -83,10 +91,11 @@ class LoadAnalytics(CkanCommand):
             svc = init_service(self.args[0], None)
         except TypeError:
             print ('Have you correctly run the getauthtoken task and '
-                   'specified the correct file here')
+                   'specified the correct token file?')
             return
 
-        downloader = DownloadAnalytics(svc, profile_id=get_profile_id(svc))
+        downloader = DownloadAnalytics(svc, profile_id=get_profile_id(svc),
+                                       delete_first=self.options.delete_first)
 
         time_period = self.args[1] if self.args and len(self.args) > 1 \
             else 'latest'

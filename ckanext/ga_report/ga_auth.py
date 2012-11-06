@@ -53,7 +53,11 @@ def get_profile_id(service):
         return None
 
     accountName = config.get('googleanalytics.account')
+    if not accountName:
+        raise Exception('googleanalytics.account needs to be configured')
     webPropertyId = config.get('googleanalytics.id')
+    if not webPropertyId:
+        raise Exception('googleanalytics.id needs to be configured')
     for acc in accounts.get('items'):
         if acc.get('name') == accountName:
             accountId = acc.get('id')

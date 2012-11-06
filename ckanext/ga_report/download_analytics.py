@@ -11,15 +11,17 @@ import ga_model
 log = logging.getLogger('ckanext.ga-report')
 
 FORMAT_MONTH = '%Y-%m'
+MIN_VIEWS = 50
+MIN_VISITS = 20
 
 class DownloadAnalytics(object):
     '''Downloads and stores analytics info'''
 
-    def __init__(self, service=None, profile_id=None):
+    def __init__(self, service=None, profile_id=None, delete_first=False):
         self.period = config['ga-report.period']
         self.service = service
         self.profile_id = profile_id
-
+        self.delete_first = delete_first
 
     def specific_month(self, date):
         import calendar
@@ -90,6 +92,10 @@ class DownloadAnalytics(object):
 
     def download_and_store(self, periods):
         for period_name, period_complete_day, start_date, end_date in periods:
+            if self.delete_first:
+                log.info('Deleting existing Analytics for period "%s"',
+                         period_name)
+                ga_model.delete(period_name)
             log.info('Downloading Analytics for period "%s" (%s - %s)',
                      self.get_full_period_name(period_name, period_complete_day),
                      start_date.strftime('%Y %m %d'),
@@ -235,11 +241,13 @@ class DownloadAnalytics(object):
         data = {}
         for result in result_data:
             data[result[0]] = data.get(result[0], 0) + int(result[2])
+        self._filter_out_long_tail(data, MIN_VIEWS)
         ga_model.update_sitewide_stats(period_name, "Languages", data)
 
         data = {}
         for result in result_data:
             data[result[1]] = data.get(result[1], 0) + int(result[2])
+        self._filter_out_long_tail(data, MIN_VIEWS)
         ga_model.update_sitewide_stats(period_name, "Country", data)
 
 
@@ -254,13 +262,11 @@ class DownloadAnalytics(object):
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')
-        twitter_links = []
         data = {}
         for result in result_data:
             if not result[0] == '(not set)':
                 data[result[0]] = data.get(result[0], 0) + int(result[2])
-                if result[0] == 'Twitter':
-                    twitter_links.append(result[1])
+        self._filter_out_long_tail(data, 3)
         ga_model.update_sitewide_stats(period_name, "Social sources", data)
 
 
@@ -278,12 +284,14 @@ class DownloadAnalytics(object):
         data = {}
         for result in result_data:
             data[result[0]] = data.get(result[0], 0) + int(result[2])
+        self._filter_out_long_tail(data, MIN_VIEWS)
         ga_model.update_sitewide_stats(period_name, "Operating Systems", data)
 
         data = {}
         for result in result_data:
-            key = "%s (%s)" % (result[0],result[1])
-            data[key] = result[2]
+            if int(result[2]) >= MIN_VIEWS:
+                key = "%s %s" % (result[0],result[1])
+                data[key] = result[2]
         ga_model.update_sitewide_stats(period_name, "Operating Systems versions", data)
 
 
@@ -298,17 +306,42 @@ class DownloadAnalytics(object):
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')
+        # e.g. [u'Firefox', u'19.0', u'20']
+
         data = {}
         for result in result_data:
             data[result[0]] = data.get(result[0], 0) + int(result[2])
+        self._filter_out_long_tail(data, MIN_VIEWS)
         ga_model.update_sitewide_stats(period_name, "Browsers", data)
 
         data = {}
         for result in result_data:
-            key = "%s (%s)" % (result[0], result[1])
-            data[key] = result[2]
+            key = "%s %s" % (result[0], self._filter_browser_version(result[0], result[1]))
+            data[key] = data.get(key, 0) + int(result[2])
+        self._filter_out_long_tail(data, MIN_VIEWS)
         ga_model.update_sitewide_stats(period_name, "Browser versions", data)
 
+    @classmethod
+    def _filter_browser_version(cls, browser, version_str):
+        '''
+        Simplifies a browser version string if it is detailed.
+        i.e. groups together Firefox 3.5.1 and 3.5.2 to be just 3.
+        This is helpful when viewing stats and good to protect privacy.
+        '''
+        ver = version_str
+        parts = ver.split('.')
+        if len(parts) > 1:
+            if parts[1][0] == '0':
+                ver = parts[0]
+            else:
+                ver = "%s" % (parts[0])
+        # Special case complex version nums
+        if browser in ['Safari', 'Android Browser']:
+            ver = parts[0]
+            if len(ver) > 2:
+                num_hidden_digits = len(ver) - 2
+                ver = ver[0] + ver[1] + 'X' * num_hidden_digits
+        return ver
 
     def _mobile_stats(self, start_date, end_date, period_name):
         """ Info about mobile devices """
@@ -326,9 +359,22 @@ class DownloadAnalytics(object):
         data = {}
         for result in result_data:
             data[result[0]] = data.get(result[0], 0) + int(result[2])
+        self._filter_out_long_tail(data, MIN_VIEWS)
         ga_model.update_sitewide_stats(period_name, "Mobile brands", data)
 
         data = {}
         for result in result_data:
             data[result[1]] = data.get(result[1], 0) + int(result[2])
+        self._filter_out_long_tail(data, MIN_VIEWS)
         ga_model.update_sitewide_stats(period_name, "Mobile devices", data)
+
+    @classmethod
+    def _filter_out_long_tail(cls, data, threshold=10):
+        '''
+        Given data which is a frequency distribution, filter out
+        results which are below a threshold count. This is good to protect
+        privacy.
+        '''
+        for key, value in data.items():
+            if value < threshold:
+                del data[key]

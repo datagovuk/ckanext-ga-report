@@ -294,3 +294,15 @@ def go_down_tree(publisher):
     for child in get_children(publisher):
         for grandchild in go_down_tree(child):
             yield grandchild
+
+def delete(period_name):
+    '''
+    Deletes table data for the specified period, or specify 'all'
+    for all periods.
+    '''
+    for object_type in (GA_Url, GA_Stat, GA_Publisher, GA_ReferralStat):
+        q = model.Session.query(object_type)
+        if period_name != 'all':
+            q = q.filter_by(period_name=period_name)
+        q.delete()
+    model.Session.commit()
