@@ -188,12 +188,17 @@ def update_url_stats(period_name, period_complete_day, url_data):
     for url, views, visitors in url_data:
         package, publisher = _get_package_and_publisher(url)
 
+
         item = model.Session.query(GA_Url).\
             filter(GA_Url.period_name==period_name).\
             filter(GA_Url.url==url).first()
         if item:
             item.pageviews = item.pageviews + views
             item.visitors = item.visitors + visitors
+            if not item.package_id:
+                item.package_id = package
+            if not item.department_id:
+                item.department_id = publisher
             model.Session.add(item)
         else:
             values = {'id': make_uuid(),
@@ -209,6 +214,13 @@ def update_url_stats(period_name, period_complete_day, url_data):
         model.Session.commit()
 
         if package:
+            old_pageviews, old_visits = 0, 0
+            old = model.Session.query(GA_Url).\
+                filter(GA_Url.period_name=='All').\
+                filter(GA_Url.url==url).all()
+            old_pageviews = sum([int(o.pageviews) for o in old])
+            old_visits = sum([int(o.visitors) for o in old])
+
             entries = model.Session.query(GA_Url).\
                 filter(GA_Url.period_name!='All').\
                 filter(GA_Url.url==url).all()
@@ -216,15 +228,14 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'period_name': 'All',
                       'period_complete_day': 0,
                       'url': url,
-                      'pageviews': sum([int(e.pageviews) for e in entries]),
-                      'visitors': sum([int(e.visitors) for e in entries]),
+                      'pageviews': sum([int(e.pageviews) for e in entries]) + old_pageviews,
+                      'visitors': sum([int(e.visitors) for e in entries]) + old_visits,
                       'department_id': publisher,
                       'package_id': package
                      }
 
             model.Session.add(GA_Url(**values))
             model.Session.commit()
-
 
 
 
