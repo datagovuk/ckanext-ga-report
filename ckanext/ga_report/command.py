@@ -80,7 +80,7 @@ class LoadAnalytics(CkanCommand):
                                default=False,
                                dest='delete_first',
                                help='Delete data for the period first')
-        self.parser.add_option('-s', '--slip_url_stats',
+        self.parser.add_option('-s', '--skip_url_stats',
                                action='store_true',
                                default=False,
                                dest='skip_url_stats',

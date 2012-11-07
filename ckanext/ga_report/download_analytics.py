@@ -253,7 +253,7 @@ class DownloadAnalytics(object):
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')
-        if len(result_data) != 1:
+        if not result_data or len(result_data) != 1:
             log.error('Could not pinpoint the bounces for path: %s. Got results: %r',
                       path, result_data)
             return
@@ -261,7 +261,7 @@ class DownloadAnalytics(object):
         bounces, total = [float(x) for x in result_data[0][1:]]
         pct = 100 * bounces/total
         log.info('%d bounces from %d total == %s', bounces, total, pct)
-        ga_model.update_sitewide_stats(period_name, "Totals", {'Bounce rate': pct})
+        ga_model.update_sitewide_stats(period_name, "Totals", {'Bounce rate (home page)': pct})
 
 
     def _locale_stats(self, start_date, end_date, period_name):

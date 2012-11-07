@@ -71,13 +71,13 @@ class GaReport(BaseController):
         entries = q.order_by('ga_stat.key').all()
 
         def clean_key(key, val):
-            if key in ['Average time on site', 'Pages per visit', 'New visits', 'Bounces']:
+            if key in ['Average time on site', 'Pages per visit', 'New visits', 'Bounce rate (home page)']:
                 val =  "%.2f" % round(float(val), 2)
                 if key == 'Average time on site':
                     mins, secs = divmod(float(val), 60)
                     hours, mins = divmod(mins, 60)
                     val = '%02d:%02d:%02d (%s seconds) ' % (hours, mins, secs, val)
-                if key in ['New visits','Bounces']:
+                if key in ['New visits','Bounce rate (home page)']:
                     val = "%s%%" % val
             if key in ['Total page views', 'Total visits']:
                 val = int(val)
@@ -312,7 +312,7 @@ def _get_top_publishers(limit=20):
           and package_id <> ''
           and url like '/dataset/%%'
           and period_name=%s
-        group by department_id order by visits desc
+        group by department_id order by views desc
         """
     if limit:
         q = q + " limit %s;" % (limit)
