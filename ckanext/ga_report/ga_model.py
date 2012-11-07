@@ -1,10 +1,10 @@
 import re
 import uuid
 
-from sqlalchemy import Table, Column, MetaData
+from sqlalchemy import Table, Column, MetaData, ForeignKey
 from sqlalchemy import types
 from sqlalchemy.sql import select
-from sqlalchemy.orm import mapper
+from sqlalchemy.orm import mapper, relation
 from sqlalchemy import func
 
 import ckan.model as model
@@ -14,8 +14,6 @@ def make_uuid():
     return unicode(uuid.uuid4())
 
 metadata = MetaData()
-
-
 
 class GA_Url(object):
 
@@ -32,6 +30,7 @@ url_table = Table('ga_url', metadata,
                       Column('visitors', types.UnicodeText),
                       Column('url', types.UnicodeText),
                       Column('department_id', types.UnicodeText),
+                      Column('package_id', types.UnicodeText),
                 )
 mapper(GA_Url, url_table)
 
@@ -163,6 +162,10 @@ def update_url_stats(period_name, period_complete_day, url_data):
         url = _normalize_url(url)
         department_id = _get_department_id_of_url(url)
 
+        package = None
+        if url.startswith('/dataset/'):
+            package = url[len('/dataset/'):]
+
         # see if the row for this url & month is in the table already
         item = model.Session.query(GA_Url).\
             filter(GA_Url.period_name==period_name).\
@@ -172,6 +175,7 @@ def update_url_stats(period_name, period_complete_day, url_data):
             item.pageviews = views
             item.visitors = visitors
             item.department_id = department_id
+            item.package_id = package
             model.Session.add(item)
         else:
             # create the row
@@ -181,9 +185,31 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'url': url,
                       'pageviews': views,
                       'visitors': visitors,
-                      'department_id': department_id
+                      'department_id': department_id,
+                      'package_id': package
                      }
             model.Session.add(GA_Url(**values))
+
+        # We now need to recaculate the ALL time_period from the data we have
+        # Delete the old 'All'
+        old = model.Session.query(GA_Url).\
+            filter(GA_Url.period_name == "All").\
+            filter(GA_Url.url==url).delete()
+
+        items = model.Session.query(GA_Url).\
+            filter(GA_Url.period_name != "All").\
+            filter(GA_Url.url==url).all()
+        values = {'id': make_uuid(),
+                  'period_name': "All",
+                  'period_complete_day': "0",
+                  'url': url,
+                  'pageviews': sum([int(x.pageviews) for x in items]),
+                  'visitors': sum([int(x.visitors) for x in items]),
+                  'department_id': department_id,
+                  'package_id': package
+                 }
+        model.Session.add(GA_Url(**values))
+
         model.Session.commit()
 
 

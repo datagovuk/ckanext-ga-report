@@ -23,7 +23,7 @@ def _get_month_name(strdate):
 
 def _month_details(cls):
     months = []
-    vals = model.Session.query(cls.period_name).distinct().all()
+    vals = model.Session.query(cls.period_name).filter(cls.period_name!='All').distinct().all()
     for m in vals:
         months.append( (m[0], _get_month_name(m[0])))
     return sorted(months, key=operator.itemgetter(0), reverse=True)
@@ -236,41 +236,23 @@ class GaDatasetReport(BaseController):
         if count == -1:
             count = sys.maxint
 
-        q = model.Session.query(GA_Url)\
+        month = c.month or 'All'
+
+        q = model.Session.query(GA_Url,model.Package)\
+            .filter(model.Package.name==GA_Url.package_id)\
             .filter(GA_Url.url.like('/dataset/%'))
         if publisher:
             q = q.filter(GA_Url.department_id==publisher.name)
-        if c.month:
-            q = q.filter(GA_Url.period_name==c.month)
+        q = q.filter(GA_Url.period_name==month)
         q = q.order_by('ga_url.visitors::int desc')
+        top_packages = []
 
-        if c.month:
-            top_packages = []
-            for entry in q.limit(count):
-                package_name = entry.url[len('/dataset/'):]
-                p = model.Package.get(package_name)
-                if p:
-                    top_packages.append((p, entry.pageviews, entry.visitors))
-                else:
-                    log.warning('Could not find package "%s"', package_name)
-        else:
-            ds = {}
-            for entry in q.limit(count):
-                package_name = entry.url[len('/dataset/'):]
-                p = model.Package.get(package_name)
-                if p:
-                    if not p in ds:
-                        ds[p] = {'views': 0, 'visits': 0}
-                    ds[p]['views'] = ds[p]['views'] + int(entry.pageviews)
-                    ds[p]['visits'] = ds[p]['visits'] + int(entry.visitors)
-                else:
-                    log.warning('Could not find package "%s"', package_name)
+        for entry,package in q.limit(count):
+            if package:
+                top_packages.append((package, entry.pageviews, entry.visitors))
+            else:
+                log.warning('Could not find package associated package')
 
-            results = []
-            for k, v in ds.iteritems():
-                results.append((k,v['views'],v['visits']))
-
-            top_packages = sorted(results, key=operator.itemgetter(1), reverse=True)
         return top_packages
 
     def read(self):
@@ -306,15 +288,12 @@ class GaDatasetReport(BaseController):
         else:
             c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
+        month = c.mnth or 'All'
         c.publisher_page_views = 0
         q = model.Session.query(GA_Url).\
             filter(GA_Url.url=='/publisher/%s' % c.publisher_name)
-        if c.month:
-            entry = q.filter(GA_Url.period_name==c.month).first()
-            c.publisher_page_views = entry.pageviews if entry else 0
-        else:
-            for e in q.all():
-                c.publisher_page_views = c.publisher_page_views  + int(e.pageviews)
+        entry = q.filter(GA_Url.period_name==c.month).first()
+        c.publisher_page_views = entry.pageviews if entry else 0
 
         c.top_packages = self._get_packages(c.publisher, 20)
 
