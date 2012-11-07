@@ -1,7 +1,9 @@
 import logging
 import operator
+
 import ckan.lib.base as base
 import ckan.model as model
+from ckan.logic import get_action
 
 from ckanext.ga_report.ga_model import GA_Url, GA_Publisher
 from ckanext.ga_report.controller import _get_publishers
@@ -39,25 +41,38 @@ def single_popular_dataset(top=20):
                    order_by('ga_url.pageviews::int desc')
     num_top_datasets = top_datasets.count()
 
+    dataset = None
     if num_top_datasets:
-        dataset = None
+        count = 0
         while not dataset:
             rand = random.randrange(0, min(top, num_top_datasets))
             ga_url = top_datasets[rand]
             dataset = model.Package.get(ga_url.url[len('/dataset/'):])
             if dataset and not dataset.state == 'active':
                 dataset = None
-    else:
+                count += 1
+                if count > 10:
+                    break
+    if not dataset:
+        # fallback
         dataset = model.Session.query(model.Package)\
                   .filter_by(state='active').first()
-    publisher = dataset.get_groups('publisher')[0]
-    return {
-        'dataset': dataset,
-        'publisher': publisher
-    }
+        if not dataset:
+            return None
+    dataset_dict = get_action('package_show')({'model': model,
+                                               'session': model.Session},
+                                              {'id':dataset.id})
+    return dataset_dict
 
 def single_popular_dataset_html(top=20):
-    context = single_popular_dataset(top)
+    dataset_dict = single_popular_dataset(top)
+    groups = package.get('groups', [])
+    publishers = [ g for g in groups if g.get('type') == 'publisher' ]
+    publisher = publishers[0] if publishers else {'name':'', 'title': ''}
+    context = {
+        'dataset': dataset_dict,
+        'publisher': publisher_dict
+        }
     return base.render_snippet('ga_report/ga_popular_single.html', **context)
 
 

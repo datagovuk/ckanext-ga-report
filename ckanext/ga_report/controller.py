@@ -22,6 +22,7 @@ def _get_month_name(strdate):
 
 
 def _month_details(cls):
+    '''Returns a list of all the month names'''
     months = []
     vals = model.Session.query(cls.period_name).filter(cls.period_name!='All').distinct().all()
     for m in vals:
