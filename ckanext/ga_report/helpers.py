@@ -105,7 +105,7 @@ def _datasets_for_publisher(publisher, count):
             if not p in datasets:
                 datasets[p] = {'views':0, 'visits': 0}
             datasets[p]['views'] = datasets[p]['views'] + int(entry.pageviews)
-            datasets[p]['visits'] = datasets[p]['visits'] + int(entry.visitors)
+            datasets[p]['visits'] = datasets[p]['visits'] + int(entry.visits)
 
     results = []
     for k, v in datasets.iteritems():

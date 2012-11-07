@@ -27,7 +27,7 @@ url_table = Table('ga_url', metadata,
                       Column('period_name', types.UnicodeText),
                       Column('period_complete_day', types.Integer),
                       Column('pageviews', types.UnicodeText),
-                      Column('visitors', types.UnicodeText),
+                      Column('visits', types.UnicodeText),
                       Column('url', types.UnicodeText),
                       Column('department_id', types.UnicodeText),
                       Column('package_id', types.UnicodeText),
@@ -63,7 +63,7 @@ pub_table = Table('ga_publisher', metadata,
                   Column('period_name', types.UnicodeText),
                   Column('publisher_name', types.UnicodeText),
                   Column('views', types.UnicodeText),
-                  Column('visitors', types.UnicodeText),
+                  Column('visits', types.UnicodeText),
                   Column('toplevel', types.Boolean, default=False),
                   Column('subpublishercount', types.Integer, default=0),
                   Column('parent', types.UnicodeText),
@@ -157,25 +157,6 @@ def update_sitewide_stats(period_name, stat_name, data):
         model.Session.commit()
 
 
-def update_url_stat_totals(period_name):
-
-    """
-        items = model.Session.query(GA_Url).\
-            filter(GA_Url.period_name != "All").\
-            filter(GA_Url.url==url).all()
-        values = {'id': make_uuid(),
-                  'period_name': "All",
-                  'period_complete_day': "0",
-                  'url': url,
-                  'pageviews': sum([int(x.pageviews) for x in items]),
-                  'visitors': sum([int(x.visitors) for x in items]),
-                  'department_id': department_id,
-                  'package_id': package
-                 }
-        model.Session.add(GA_Url(**values))
-        model.Session.commit()
-    """
-
 def pre_update_url_stats(period_name):
     model.Session.query(GA_Url).\
             filter(GA_Url.period_name==period_name).delete()
@@ -185,7 +166,7 @@ def pre_update_url_stats(period_name):
 
 def update_url_stats(period_name, period_complete_day, url_data):
 
-    for url, views, visitors in url_data:
+    for url, views, visits in url_data:
         package, publisher = _get_package_and_publisher(url)
 
 
@@ -194,7 +175,7 @@ def update_url_stats(period_name, period_complete_day, url_data):
             filter(GA_Url.url==url).first()
         if item:
             item.pageviews = item.pageviews + views
-            item.visitors = item.visitors + visitors
+            item.visits = item.visits + visits
             if not item.package_id:
                 item.package_id = package
             if not item.department_id:
@@ -206,7 +187,7 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'period_complete_day': period_complete_day,
                       'url': url,
                       'pageviews': views,
-                      'visitors': visitors,
+                      'visits': visits,
                       'department_id': publisher,
                       'package_id': package
                      }
@@ -219,7 +200,7 @@ def update_url_stats(period_name, period_complete_day, url_data):
                 filter(GA_Url.period_name=='All').\
                 filter(GA_Url.url==url).all()
             old_pageviews = sum([int(o.pageviews) for o in old])
-            old_visits = sum([int(o.visitors) for o in old])
+            old_visits = sum([int(o.visits) for o in old])
 
             entries = model.Session.query(GA_Url).\
                 filter(GA_Url.period_name!='All').\
@@ -229,7 +210,7 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'period_complete_day': 0,
                       'url': url,
                       'pageviews': sum([int(e.pageviews) for e in entries]) + old_pageviews,
-                      'visitors': sum([int(e.visitors) for e in entries]) + old_visits,
+                      'visits': sum([int(e.visits) for e in entries]) + old_visits,
                       'department_id': publisher,
                       'package_id': package
                      }
@@ -279,7 +260,7 @@ def update_publisher_stats(period_name):
         filter(model.Group.type=='publisher').\
         filter(model.Group.state=='active').all()
     for publisher in publishers:
-        views, visitors, subpub = update_publisher(period_name, publisher, publisher.name)
+        views, visits, subpub = update_publisher(period_name, publisher, publisher.name)
         parent, parents = '', publisher.get_groups('publisher')
         if parents:
             parent = parents[0].name
@@ -288,7 +269,7 @@ def update_publisher_stats(period_name):
             filter(GA_Publisher.publisher_name==publisher.name).first()
         if item:
             item.views = views
-            item.visitors = visitors
+            item.visits = visits
             item.publisher_name = publisher.name
             item.toplevel = publisher in toplevel
             item.subpublishercount = subpub
@@ -300,7 +281,7 @@ def update_publisher_stats(period_name):
                      'period_name': period_name,
                      'publisher_name': publisher.name,
                      'views': views,
-                     'visitors': visitors,
+                     'visits': visits,
                      'toplevel': publisher in toplevel,
                      'subpublishercount': subpub,
                      'parent': parent
@@ -310,7 +291,7 @@ def update_publisher_stats(period_name):
 
 
 def update_publisher(period_name, pub, part=''):
-    views,visitors,subpub = 0, 0, 0
+    views,visits,subpub = 0, 0, 0
     for publisher in go_down_tree(pub):
         subpub = subpub + 1
         items = model.Session.query(GA_Url).\
@@ -318,9 +299,9 @@ def update_publisher(period_name, pub, part=''):
                 filter(GA_Url.department_id==publisher.name).all()
         for item in items:
             views = views + int(item.pageviews)
-            visitors = visitors + int(item.visitors)
+            visits = visits + int(item.visits)
 
-    return views, visitors, (subpub-1)
+    return views, visits, (subpub-1)
 
 
 def get_top_level():

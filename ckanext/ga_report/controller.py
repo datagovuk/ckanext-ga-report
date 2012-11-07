@@ -244,11 +244,11 @@ class GaDatasetReport(BaseController):
         if publisher:
             q = q.filter(GA_Url.department_id==publisher.name)
         q = q.filter(GA_Url.period_name==month)
-        q = q.order_by('ga_url.visitors::int desc')
+        q = q.order_by('ga_url.visits::int desc')
         top_packages = []
         for entry,package in q.limit(count):
             if package:
-                top_packages.append((package, entry.pageviews, entry.visitors))
+                top_packages.append((package, entry.pageviews, entry.visits))
             else:
                 log.warning('Could not find package associated package')
 
@@ -306,7 +306,7 @@ def _get_top_publishers(limit=20):
     month = c.month or 'All'
     connection = model.Session.connection()
     q = """
-        select department_id, sum(pageviews::int) views, sum(visitors::int) visits
+        select department_id, sum(pageviews::int) views, sum(visits::int) visits
         from ga_url
         where department_id <> ''
           and package_id <> ''

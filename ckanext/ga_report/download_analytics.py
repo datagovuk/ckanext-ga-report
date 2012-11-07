@@ -96,7 +96,7 @@ class DownloadAnalytics(object):
                      self.get_full_period_name(period_name, period_complete_day),
                      start_date.strftime('%Y-%m-%d'),
                      end_date.strftime('%Y-%m-%d'))
- 
+
             if self.delete_first:
                 log.info('Deleting existing Analytics for this period "%s"',
                          period_name)
@@ -159,8 +159,8 @@ class DownloadAnalytics(object):
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
         query = 'ga:pagePath=%s$' % path
-        metrics = 'ga:uniquePageviews, ga:visits'
-        sort = '-ga:uniquePageviews'
+        metrics = 'ga:pageviews, ga:visits'
+        sort = '-ga:pageviews'
 
         # Supported query params at
         # https://developers.google.com/analytics/devguides/reporting/core/v3/reference
@@ -212,8 +212,8 @@ class DownloadAnalytics(object):
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
                                  start_date=start_date,
-                                 metrics='ga:uniquePageviews',
-                                 sort='-ga:uniquePageviews',
+                                 metrics='ga:pageviews',
+                                 sort='-ga:pageviews',
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')
@@ -242,7 +242,7 @@ class DownloadAnalytics(object):
                                  ids='ga:' + self.profile_id,
                                  filters='ga:pagePath=~%s$' % (path,),
                                  start_date=start_date,
-                                 metrics='ga:bounces,ga:uniquePageviews',
+                                 metrics='ga:bounces,ga:pageviews',
                                  dimensions='ga:pagePath',
                                  max_results=10000,
                                  end_date=end_date).execute()
@@ -260,8 +260,8 @@ class DownloadAnalytics(object):
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
                                  start_date=start_date,
-                                 metrics='ga:uniquePageviews',
-                                 sort='-ga:uniquePageviews',
+                                 metrics='ga:pageviews',
+                                 sort='-ga:pageviews',
                                  dimensions="ga:language,ga:country",
                                  max_results=10000,
                                  end_date=end_date).execute()
@@ -284,8 +284,8 @@ class DownloadAnalytics(object):
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
                                  start_date=start_date,
-                                 metrics='ga:uniquePageviews',
-                                 sort='-ga:uniquePageviews',
+                                 metrics='ga:pageviews',
+                                 sort='-ga:pageviews',
                                  dimensions="ga:socialNetwork,ga:referralPath",
                                  max_results=10000,
                                  end_date=end_date).execute()
@@ -303,8 +303,8 @@ class DownloadAnalytics(object):
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
                                  start_date=start_date,
-                                 metrics='ga:uniquePageviews',
-                                 sort='-ga:uniquePageviews',
+                                 metrics='ga:pageviews',
+                                 sort='-ga:pageviews',
                                  dimensions="ga:operatingSystem,ga:operatingSystemVersion",
                                  max_results=10000,
                                  end_date=end_date).execute()
@@ -328,8 +328,8 @@ class DownloadAnalytics(object):
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
                                  start_date=start_date,
-                                 metrics='ga:uniquePageviews',
-                                 sort='-ga:uniquePageviews',
+                                 metrics='ga:pageviews',
+                                 sort='-ga:pageviews',
                                  dimensions="ga:browser,ga:browserVersion",
                                  max_results=10000,
                                  end_date=end_date).execute()
@@ -377,8 +377,8 @@ class DownloadAnalytics(object):
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
                                  start_date=start_date,
-                                 metrics='ga:uniquePageviews',
-                                 sort='-ga:uniquePageviews',
+                                 metrics='ga:pageviews',
+                                 sort='-ga:pageviews',
                                  dimensions="ga:mobileDeviceBranding, ga:mobileDeviceInfo",
                                  max_results=10000,
                                  end_date=end_date).execute()
