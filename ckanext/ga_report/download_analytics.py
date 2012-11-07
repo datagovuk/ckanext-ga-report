@@ -92,33 +92,40 @@ class DownloadAnalytics(object):
 
     def download_and_store(self, periods):
         for period_name, period_complete_day, start_date, end_date in periods:
+            log.info('Period "%s" (%s - %s)',
+                     self.get_full_period_name(period_name, period_complete_day),
+                     start_date.strftime('%Y-%m-%d'),
+                     end_date.strftime('%Y-%m-%d'))
+ 
             if self.delete_first:
-                log.info('Deleting existing Analytics for period "%s"',
+                log.info('Deleting existing Analytics for this period "%s"',
                          period_name)
                 ga_model.delete(period_name)
-            log.info('Downloading Analytics for period "%s" (%s - %s)',
-                     self.get_full_period_name(period_name, period_complete_day),
-                     start_date.strftime('%Y %m %d'),
-                     end_date.strftime('%Y %m %d'))
 
             # Clean up the entries before we run this
             ga_model.pre_update_url_stats(period_name)
 
             accountName = config.get('googleanalytics.account')
 
+            log.info('Downloading analytics for dataset views')
             data = self.download(start_date, end_date, '~/%s/dataset/[a-z0-9-_]+' % accountName)
-            log.info('Storing Dataset Analytics for period "%s"',
-                     self.get_full_period_name(period_name, period_complete_day))
+
+            log.info('Storing dataset views (%i rows)', len(data.get('url')))
             self.store(period_name, period_complete_day, data, )
 
+            log.info('Downloading analytics for publisher views')
             data = self.download(start_date, end_date, '~/%s/publisher/[a-z0-9-_]+' % accountName)
-            log.info('Storing Publisher Analytics for period "%s"',
-                     self.get_full_period_name(period_name, period_complete_day))
+
+            log.info('Storing publisher views (%i rows)', len(data.get('url')))
             self.store(period_name, period_complete_day, data,)
 
+            log.info('Aggregating datasets by publisher')
             ga_model.update_publisher_stats(period_name) # about 30 seconds.
+
+            log.info('Downloading and storing analytics for site-wide stats')
             self.sitewide_stats( period_name )
 
+            log.info('Downloading and storing analytics for social networks')
             self.update_social_info(period_name, start_date, end_date)
 
 
@@ -187,12 +194,10 @@ class DownloadAnalytics(object):
 
         start_date = '%s-01' % period_name
         end_date = '%s-%s' % (period_name, last_day_of_month)
-        print 'Sitewide_stats for %s (%s -> %s)' % (period_name, start_date, end_date)
-
         funcs = ['_totals_stats', '_social_stats', '_os_stats',
                  '_locale_stats', '_browser_stats', '_mobile_stats']
         for f in funcs:
-            print ' + Fetching %s stats' % f.split('_')[1]
+            log.info('Downloading analytics for %s' % f.split('_')[1])
             getattr(self, f)(start_date, end_date, period_name)
 
     def _get_results(result_data, f):
