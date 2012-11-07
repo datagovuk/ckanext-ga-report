@@ -60,7 +60,8 @@ def single_popular_dataset(top=20):
         if not dataset:
             return None
     dataset_dict = get_action('package_show')({'model': model,
-                                               'session': model.Session},
+                                               'session': model.Session,
+                                               'validate': False},
                                               {'id':dataset.id})
     return dataset_dict
 

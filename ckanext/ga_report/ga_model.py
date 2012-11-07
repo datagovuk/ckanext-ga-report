@@ -183,7 +183,11 @@ def pre_update_url_stats(period_name):
 
 
 def update_url_stats(period_name, period_complete_day, url_data):
-
+    '''
+    Given a list of urls and number of hits for each during a given period,
+    stores them in GA_Url under the period and recalculates the totals for
+    the 'All' period.
+    '''
     for url, views, visitors in url_data:
         department_id = _get_department_id_of_url(url)
 
