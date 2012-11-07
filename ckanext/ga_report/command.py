@@ -80,6 +80,11 @@ class LoadAnalytics(CkanCommand):
                                default=False,
                                dest='delete_first',
                                help='Delete data for the period first')
+        self.parser.add_option('-s', '--slip_url_stats',
+                               action='store_true',
+                               default=False,
+                               dest='skip_url_stats',
+                               help='Skip the download of URL data - just do site-wide stats')
 
     def command(self):
         self._load_config()
@@ -95,7 +100,8 @@ class LoadAnalytics(CkanCommand):
             return
 
         downloader = DownloadAnalytics(svc, profile_id=get_profile_id(svc),
-                                       delete_first=self.options.delete_first)
+                                       delete_first=self.options.delete_first,
+                                       skip_url_stats=self.options.skip_url_stats)
 
         time_period = self.args[1] if self.args and len(self.args) > 1 \
             else 'latest'

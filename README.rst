@@ -33,10 +33,9 @@ Installation
       googleanalytics.id = UA-1010101-1
       googleanalytics.account = Account name (e.g. data.gov.uk, see top level item at https://www.google.com/analytics)
       ga-report.period = monthly
-      ga-report.bounce_url = /data
+      ga-report.bounce_url = /
 
-   The ga-report.bounce_url specifies the path to use when calculating bounces. For DGU this is /data
-   but you may want to set this to /.
+   The ga-report.bounce_url specifies a particular path to record the bounce rate for. Typically it is / (the home page).
 
 3. Set up this extension's database tables using a paster command. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file)::
 

@@ -111,9 +111,7 @@ def _normalize_url(url):
     >>> normalize_url('http://data.gov.uk/dataset/weekly_fuel_prices')
     '/dataset/weekly_fuel_prices'
     '''
-    # Deliberately leaving a /
-    url = url.replace('http:/','')
-    return '/' + '/'.join(url.split('/')[2:])
+    return '/' + '/'.join(url.split('/')[3:])
 
 
 def _get_package_and_publisher(url):
@@ -165,7 +163,11 @@ def pre_update_url_stats(period_name):
 
 
 def update_url_stats(period_name, period_complete_day, url_data):
-
+    '''
+    Given a list of urls and number of hits for each during a given period,
+    stores them in GA_Url under the period and recalculates the totals for
+    the 'All' period.
+    '''
     for url, views, visits in url_data:
         package, publisher = _get_package_and_publisher(url)
 
