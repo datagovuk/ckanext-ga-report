@@ -111,9 +111,7 @@ def _normalize_url(url):
     >>> normalize_url('http://data.gov.uk/dataset/weekly_fuel_prices')
     '/dataset/weekly_fuel_prices'
     '''
-    # Deliberately leaving a /
-    url = url.replace('http:/','')
-    return '/' + '/'.join(url.split('/')[2:])
+    return '/' + '/'.join(url.split('/')[3:])
 
 
 def _get_package_and_publisher(url):

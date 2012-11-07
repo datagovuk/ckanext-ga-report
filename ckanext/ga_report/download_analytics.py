@@ -17,11 +17,13 @@ MIN_VISITS = 20
 class DownloadAnalytics(object):
     '''Downloads and stores analytics info'''
 
-    def __init__(self, service=None, profile_id=None, delete_first=False):
+    def __init__(self, service=None, profile_id=None, delete_first=False,
+                 skip_url_stats=False):
         self.period = config['ga-report.period']
         self.service = service
         self.profile_id = profile_id
         self.delete_first = delete_first
+        self.skip_url_stats = skip_url_stats
 
     def specific_month(self, date):
         import calendar
@@ -102,25 +104,26 @@ class DownloadAnalytics(object):
                          period_name)
                 ga_model.delete(period_name)
 
-            # Clean up the entries before we run this
-            ga_model.pre_update_url_stats(period_name)
+            if not self.skip_url_stats:
+                # Clean out old url data before storing the new
+                ga_model.pre_update_url_stats(period_name)
 
-            accountName = config.get('googleanalytics.account')
+                accountName = config.get('googleanalytics.account')
 
-            log.info('Downloading analytics for dataset views')
-            data = self.download(start_date, end_date, '~/%s/dataset/[a-z0-9-_]+' % accountName)
+                log.info('Downloading analytics for dataset views')
+                data = self.download(start_date, end_date, '~/%s/dataset/[a-z0-9-_]+' % accountName)
 
-            log.info('Storing dataset views (%i rows)', len(data.get('url')))
-            self.store(period_name, period_complete_day, data, )
+                log.info('Storing dataset views (%i rows)', len(data.get('url')))
+                self.store(period_name, period_complete_day, data, )
 
-            log.info('Downloading analytics for publisher views')
-            data = self.download(start_date, end_date, '~/%s/publisher/[a-z0-9-_]+' % accountName)
+                log.info('Downloading analytics for publisher views')
+                data = self.download(start_date, end_date, '~/%s/publisher/[a-z0-9-_]+' % accountName)
 
-            log.info('Storing publisher views (%i rows)', len(data.get('url')))
-            self.store(period_name, period_complete_day, data,)
+                log.info('Storing publisher views (%i rows)', len(data.get('url')))
+                self.store(period_name, period_complete_day, data,)
 
-            log.info('Aggregating datasets by publisher')
-            ga_model.update_publisher_stats(period_name) # about 30 seconds.
+                log.info('Aggregating datasets by publisher')
+                ga_model.update_publisher_stats(period_name) # about 30 seconds.
 
             log.info('Downloading and storing analytics for site-wide stats')
             self.sitewide_stats( period_name )
@@ -177,8 +180,12 @@ class DownloadAnalytics(object):
         packages = []
         for entry in results.get('rows'):
             (loc,pageviews,visits) = entry
-            url = _normalize_url('http:/' + loc)
+            url = _normalize_url('http:/' + loc) # strips off domain e.g. www.data.gov.uk or data.gov.uk
+
             if not url.startswith('/dataset/') and not url.startswith('/publisher/'):
+                # filter out strays like:
+                # /data/user/login?came_from=http://data.gov.uk/dataset/os-code-point-open
+                # /403.html?page=/about&from=http://data.gov.uk/publisher/planning-inspectorate
                 continue
             packages.append( (url, pageviews, visits,) ) # Temporary hack
         return dict(url=packages)
@@ -234,25 +241,27 @@ class DownloadAnalytics(object):
         }
         ga_model.update_sitewide_stats(period_name, "Totals", data)
 
-        # Bounces from /data. This url is specified in configuration because
-        # for DGU we don't want /.
-        path = config.get('ga-report.bounce_url','/')
-        print path
+        # Bounces from / or another configurable page.
+        path = '/%s%s' % (config.get('googleanalytics.account'),
+                          config.get('ga-report.bounce_url', '/'))
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
-                                 filters='ga:pagePath=~%s$' % (path,),
+                                 filters='ga:pagePath==%s' % (path,),
                                  start_date=start_date,
                                  metrics='ga:bounces,ga:uniquePageviews',
                                  dimensions='ga:pagePath',
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')
-        for results in result_data:
-            if results[0] == path:
-                bounce, total = [float(x) for x in results[1:]]
-                pct = 100 * bounce/total
-                print "%d bounces from %d total == %s" % (bounce, total, pct)
-                ga_model.update_sitewide_stats(period_name, "Totals", {'Bounces': pct})
+        if len(result_data) != 1:
+            log.error('Could not pinpoint the bounces for path: %s. Got results: %r',
+                      path, result_data)
+            return
+        results = result_data[0]
+        bounces, total = [float(x) for x in result_data[0][1:]]
+        pct = 100 * bounces/total
+        log.info('%d bounces from %d total == %s', bounces, total, pct)
+        ga_model.update_sitewide_stats(period_name, "Totals", {'Bounce rate': pct})
 
 
     def _locale_stats(self, start_date, end_date, period_name):
