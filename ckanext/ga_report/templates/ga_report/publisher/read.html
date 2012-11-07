@@ -47,15 +47,15 @@
      <table py:if="c.top_packages" class="table table-condensed table-bordered table-striped">
 	 <tr>
 	   <th>Dataset</th>
-	   <th>Views</th>
 	   <th>Visits</th>
+	   <th>Views</th>
 	 </tr>
         <py:for each="package, views, visits in c.top_packages">
 	  <tr>
 	    <td>${h.link_to(package.title or package.name, h.url_for(controller='package', action='read', id=package.name))}
 	    </td>
-	    <td>${views}</td>
 	    <td>${visits}</td>
+	    <td>${views}</td>
 	  </tr>
         </py:for>
      </table>

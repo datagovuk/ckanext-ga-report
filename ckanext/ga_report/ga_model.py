@@ -156,46 +156,9 @@ def update_sitewide_stats(period_name, stat_name, data):
         model.Session.commit()
 
 
+def update_url_stat_totals(period_name):
 
-def update_url_stats(period_name, period_complete_day, url_data):
-    for url, views, visitors in url_data:
-        url = _normalize_url(url)
-        department_id = _get_department_id_of_url(url)
-
-        package = None
-        if url.startswith('/dataset/'):
-            package = url[len('/dataset/'):]
-
-        # see if the row for this url & month is in the table already
-        item = model.Session.query(GA_Url).\
-            filter(GA_Url.period_name==period_name).\
-            filter(GA_Url.url==url).first()
-        if item:
-            item.period_name = period_name
-            item.pageviews = views
-            item.visitors = visitors
-            item.department_id = department_id
-            item.package_id = package
-            model.Session.add(item)
-        else:
-            # create the row
-            values = {'id': make_uuid(),
-                      'period_name': period_name,
-                      'period_complete_day': period_complete_day,
-                      'url': url,
-                      'pageviews': views,
-                      'visitors': visitors,
-                      'department_id': department_id,
-                      'package_id': package
-                     }
-            model.Session.add(GA_Url(**values))
-
-        # We now need to recaculate the ALL time_period from the data we have
-        # Delete the old 'All'
-        old = model.Session.query(GA_Url).\
-            filter(GA_Url.period_name == "All").\
-            filter(GA_Url.url==url).delete()
-
+    """
         items = model.Session.query(GA_Url).\
             filter(GA_Url.period_name != "All").\
             filter(GA_Url.url==url).all()
@@ -209,8 +172,55 @@ def update_url_stats(period_name, period_complete_day, url_data):
                   'package_id': package
                  }
         model.Session.add(GA_Url(**values))
-
         model.Session.commit()
+    """
+
+def pre_update_url_stats(period_name):
+    model.Session.query(GA_Url).\
+            filter(GA_Url.period_name==period_name).delete()
+    model.Session.query(GA_Url).\
+            filter(GA_Url.period_name=='All').delete()
+
+
+def update_url_stats(period_name, period_complete_day, url_data):
+
+    for url, views, visitors in url_data:
+        department_id = _get_department_id_of_url(url)
+
+        package = None
+        if url.startswith('/dataset/'):
+            package = url[len('/dataset/'):]
+
+        values = {'id': make_uuid(),
+                  'period_name': period_name,
+                  'period_complete_day': period_complete_day,
+                  'url': url,
+                  'pageviews': views,
+                  'visitors': visitors,
+                  'department_id': department_id,
+                  'package_id': package
+                 }
+        model.Session.add(GA_Url(**values))
+        model.Session.commit()
+
+        if package:
+            entries = model.Session.query(GA_Url).\
+                filter(GA_Url.period_name!='All').\
+                filter(GA_Url.url==url).all()
+            values = {'id': make_uuid(),
+                      'period_name': 'All',
+                      'period_complete_day': 0,
+                      'url': url,
+                      'pageviews': sum([int(e.pageviews) for e in entries]),
+                      'visitors': sum([int(e.visitors) for e in entries]),
+                      'department_id': department_id,
+                      'package_id': package
+                     }
+            model.Session.add(GA_Url(**values))
+            model.Session.commit()
+
+
+
 
 
 def update_social(period_name, data):
