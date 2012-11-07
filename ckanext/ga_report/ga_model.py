@@ -116,7 +116,7 @@ def _normalize_url(url):
     return '/' + '/'.join(url.split('/')[2:])
 
 
-def _get_department_id_of_url(url):
+def _get_package_and_publisher(url):
     # e.g. /dataset/fuel_prices
     # e.g. /dataset/fuel_prices/resource/e63380d4
     dataset_match = re.match('/dataset/([^/]+)(/.*)?', url)
@@ -126,12 +126,13 @@ def _get_department_id_of_url(url):
         if dataset:
             publisher_groups = dataset.get_groups('publisher')
             if publisher_groups:
-                return publisher_groups[0].name
+                return dataset_ref,publisher_groups[0].name
+        return dataset_ref, None
     else:
         publisher_match = re.match('/publisher/([^/]+)(/.*)?', url)
         if publisher_match:
-            return publisher_match.groups()[0]
-
+            return None, publisher_match.groups()[0]
+    return None, None
 
 def update_sitewide_stats(period_name, stat_name, data):
     for k,v in data.iteritems():
@@ -189,25 +190,41 @@ def update_url_stats(period_name, period_complete_day, url_data):
     the 'All' period.
     '''
     for url, views, visitors in url_data:
-        department_id = _get_department_id_of_url(url)
+        package, publisher = _get_package_and_publisher(url)
 
-        package = None
-        if url.startswith('/dataset/'):
-            package = url[len('/dataset/'):]
 
-        values = {'id': make_uuid(),
-                  'period_name': period_name,
-                  'period_complete_day': period_complete_day,
-                  'url': url,
-                  'pageviews': views,
-                  'visitors': visitors,
-                  'department_id': department_id,
-                  'package_id': package
-                 }
-        model.Session.add(GA_Url(**values))
+        item = model.Session.query(GA_Url).\
+            filter(GA_Url.period_name==period_name).\
+            filter(GA_Url.url==url).first()
+        if item:
+            item.pageviews = item.pageviews + views
+            item.visitors = item.visitors + visitors
+            if not item.package_id:
+                item.package_id = package
+            if not item.department_id:
+                item.department_id = publisher
+            model.Session.add(item)
+        else:
+            values = {'id': make_uuid(),
+                      'period_name': period_name,
+                      'period_complete_day': period_complete_day,
+                      'url': url,
+                      'pageviews': views,
+                      'visitors': visitors,
+                      'department_id': publisher,
+                      'package_id': package
+                     }
+            model.Session.add(GA_Url(**values))
         model.Session.commit()
 
         if package:
+            old_pageviews, old_visits = 0, 0
+            old = model.Session.query(GA_Url).\
+                filter(GA_Url.period_name=='All').\
+                filter(GA_Url.url==url).all()
+            old_pageviews = sum([int(o.pageviews) for o in old])
+            old_visits = sum([int(o.visitors) for o in old])
+
             entries = model.Session.query(GA_Url).\
                 filter(GA_Url.period_name!='All').\
                 filter(GA_Url.url==url).all()
@@ -215,14 +232,14 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'period_name': 'All',
                       'period_complete_day': 0,
                       'url': url,
-                      'pageviews': sum([int(e.pageviews) for e in entries]),
-                      'visitors': sum([int(e.visitors) for e in entries]),
-                      'department_id': department_id,
+                      'pageviews': sum([int(e.pageviews) for e in entries]) + old_pageviews,
+                      'visitors': sum([int(e.visitors) for e in entries]) + old_visits,
+                      'department_id': publisher,
                       'package_id': package
                      }
+
             model.Session.add(GA_Url(**values))
             model.Session.commit()
-
 
 
 
