@@ -9,7 +9,7 @@ from ckan.lib.base import (BaseController, c, g, render, request, response, abor
 import sqlalchemy
 from sqlalchemy import func, cast, Integer
 import ckan.model as model
-from ga_model import GA_Url, GA_Stat, GA_ReferralStat
+from ga_model import GA_Url, GA_Stat, GA_ReferralStat, GA_Publisher
 
 log = logging.getLogger('ckanext.ga-report')
 
@@ -229,7 +229,6 @@ class GaDatasetReport(BaseController):
             c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
         c.top_publishers = _get_top_publishers()
-
         return render('ga_report/publisher/index.html')
 
     def _get_packages(self, publisher=None, count=-1):
@@ -247,7 +246,6 @@ class GaDatasetReport(BaseController):
         q = q.filter(GA_Url.period_name==month)
         q = q.order_by('ga_url.visitors::int desc')
         top_packages = []
-
         for entry,package in q.limit(count):
             if package:
                 top_packages.append((package, entry.pageviews, entry.visitors))
@@ -289,7 +287,7 @@ class GaDatasetReport(BaseController):
         else:
             c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
-        month = c.mnth or 'All'
+        month = c.month or 'All'
         c.publisher_page_views = 0
         q = model.Session.query(GA_Url).\
             filter(GA_Url.url=='/publisher/%s' % c.publisher_name)
@@ -305,33 +303,26 @@ def _get_top_publishers(limit=20):
     Returns a list of the top 20 publishers by dataset visits.
     (The number to show can be varied with 'limit')
     '''
+    month = c.month or 'All'
     connection = model.Session.connection()
     q = """
         select department_id, sum(pageviews::int) views, sum(visitors::int) visits
         from ga_url
-        where department_id <> ''"""
-    if c.month:
-        q = q + """
-                and period_name=%s
-        """
-    q = q + """
-            group by department_id order by visits desc
+        where department_id <> ''
+          and period_name=%s
+        group by department_id order by visits desc
         """
     if limit:
         q = q + " limit %s;" % (limit)
 
-    # Add this back (before and period_name =%s) if you want to ignore publisher
-    # homepage views
-    # and not url like '/publisher/%%'
-
     top_publishers = []
-    res = connection.execute(q, c.month)
-
+    res = connection.execute(q, month)
     for row in res:
         g = model.Group.get(row[0])
         if g:
             top_publishers.append((g, row[1], row[2]))
     return top_publishers
+
 
 def _get_publishers():
     '''

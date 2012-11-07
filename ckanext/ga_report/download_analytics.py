@@ -3,7 +3,7 @@ import logging
 import datetime
 import collections
 from pylons import config
-
+from ga_model import _normalize_url
 import ga_model
 
 #from ga_client import GA
@@ -102,14 +102,20 @@ class DownloadAnalytics(object):
                          period_name)
                 ga_model.delete(period_name)
 
+            # Clean up the entries before we run this
+            ga_model.pre_update_url_stats(period_name)
+
+            accountName = config.get('googleanalytics.account')
+
             log.info('Downloading analytics for dataset views')
-            data = self.download(start_date, end_date, '~/dataset/[a-z0-9-_]+')
+            data = self.download(start_date, end_date, '~/%s/dataset/[a-z0-9-_]+' % accountName)
 
             log.info('Storing dataset views (%i rows)', len(data.get('url')))
             self.store(period_name, period_complete_day, data, )
 
             log.info('Downloading analytics for publisher views')
-            data = self.download(start_date, end_date, '~/publisher/[a-z0-9-_]+')
+            data = self.download(start_date, end_date, '~/%s/publisher/[a-z0-9-_]+' % accountName)
+
             log.info('Storing publisher views (%i rows)', len(data.get('url')))
             self.store(period_name, period_complete_day, data,)
 
@@ -121,6 +127,7 @@ class DownloadAnalytics(object):
 
             log.info('Downloading and storing analytics for social networks')
             self.update_social_info(period_name, start_date, end_date)
+
 
     def update_social_info(self, period_name, start_date, end_date):
         start_date = start_date.strftime('%Y-%m-%d')
@@ -143,12 +150,11 @@ class DownloadAnalytics(object):
         data = collections.defaultdict(list)
         rows = results.get('rows',[])
         for row in rows:
-            from ga_model import _normalize_url
             data[_normalize_url(row[0])].append( (row[1], int(row[2]),) )
         ga_model.update_social(period_name, data)
 
 
-    def download(self, start_date, end_date, path='~/dataset/[a-z0-9-_]+'):
+    def download(self, start_date, end_date, path=None):
         '''Get data from GA for a given time period'''
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
@@ -171,7 +177,10 @@ class DownloadAnalytics(object):
         packages = []
         for entry in results.get('rows'):
             (loc,pageviews,visits) = entry
-            packages.append( ('http:/' + loc, pageviews, visits,) ) # Temporary hack
+            url = _normalize_url('http:/' + loc)
+            if not url.startswith('/dataset/') and not url.startswith('/publisher/'):
+                continue
+            packages.append( (url, pageviews, visits,) ) # Temporary hack
         return dict(url=packages)
 
     def store(self, period_name, period_complete_day, data):
