@@ -360,4 +360,4 @@ def get_score_for_dataset(dataset_name):
     val = int(entry.pageviews) if entry else 0
     score += val/2 if val else 0
 
-    return 0
+    return score
