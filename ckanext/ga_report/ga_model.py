@@ -342,3 +342,22 @@ def delete(period_name):
             q = q.filter_by(period_name=period_name)
         q.delete()
     model.Session.commit()
+
+def get_score_for_dataset(dataset_name):
+    import datetime
+    now = datetime.datetime.now()
+    period_names = ['%s-%02d' % (now.year, now.month),
+                    '%s-%02d' % (now.year, now.month-1)]
+
+    entry = model.Session.query(GA_Url)\
+        .filter(GA_Url.period_name==period_names[0])\
+        .filter(GA_Url.package_id==dataset_name).first()
+    score = int(entry.pageviews) if entry else 0
+
+    entry = model.Session.query(GA_Url)\
+        .filter(GA_Url.period_name==period_names[1])\
+        .filter(GA_Url.package_id==dataset_name).first()
+    val = int(entry.pageviews) if entry else 0
+    score += val/2 if val else 0
+
+    return 0
