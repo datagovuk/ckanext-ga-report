@@ -232,7 +232,7 @@ class GaDatasetReport(BaseController):
         return render('ga_report/publisher/index.html')
 
     def _get_packages(self, publisher=None, count=-1):
-        '''Returns the datasets in order of visits'''
+        '''Returns the datasets in order of views'''
         if count == -1:
             count = sys.maxint
 
@@ -244,7 +244,7 @@ class GaDatasetReport(BaseController):
         if publisher:
             q = q.filter(GA_Url.department_id==publisher.name)
         q = q.filter(GA_Url.period_name==month)
-        q = q.order_by('ga_url.visits::int desc')
+        q = q.order_by('ga_url.pageviews::int desc')
         top_packages = []
         for entry,package in q.limit(count):
             if package:
@@ -329,7 +329,7 @@ def _get_top_publishers(limit=20):
 def _get_publishers():
     '''
     Returns a list of all publishers. Each item is a tuple:
-      (names, title)
+      (name, title)
     '''
     publishers = []
     for pub in model.Session.query(model.Group).\
