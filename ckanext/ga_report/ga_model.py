@@ -10,6 +10,8 @@ from sqlalchemy import func
 import ckan.model as model
 from ckan.lib.base import *
 
+log = __import__('logging').getLogger(__name__)
+
 def make_uuid():
     return unicode(uuid.uuid4())
 
@@ -212,7 +214,7 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'period_complete_day': 0,
                       'url': url,
                       'pageviews': sum([int(e.pageviews) for e in entries]) + old_pageviews,
-                      'visits': sum([int(e.visits) for e in entries]) + old_visits,
+                      'visits': sum([int(e.visits or 0) for e in entries]) + old_visits,
                       'department_id': publisher,
                       'package_id': package
                      }
@@ -344,20 +346,32 @@ def delete(period_name):
     model.Session.commit()
 
 def get_score_for_dataset(dataset_name):
+    '''
+    Returns a "current popularity" score for a dataset,
+    based on how many views it has had recently.
+    '''
     import datetime
     now = datetime.datetime.now()
-    period_names = ['%s-%02d' % (now.year, now.month),
-                    '%s-%02d' % (now.year, now.month-1)]
+    last_month = now - datetime.timedelta(days=30)
+    period_names = ['%s-%02d' % (last_month.year, last_month.month),
+                    '%s-%02d' % (now.year, now.month),
+                    ]
 
-    entry = model.Session.query(GA_Url)\
-        .filter(GA_Url.period_name==period_names[0])\
-        .filter(GA_Url.package_id==dataset_name).first()
-    score = int(entry.pageviews) if entry else 0
+    score = 0
+    for period_name in period_names:
+        score /= 2 # previous periods are discounted by 50%
+        entry = model.Session.query(GA_Url)\
+                .filter(GA_Url.period_name==period_name)\
+                .filter(GA_Url.package_id==dataset_name).first()
+        # score
+        if entry:
+            views = float(entry.pageviews)
+            if entry.period_complete_day:
+                views_per_day = views / entry.period_complete_day
+            else:
+                views_per_day = views / 15 # guess
+            score += views_per_day
 
-    entry = model.Session.query(GA_Url)\
-        .filter(GA_Url.period_name==period_names[1])\
-        .filter(GA_Url.package_id==dataset_name).first()
-    val = int(entry.pageviews) if entry else 0
-    score += val/2 if val else 0
-
+    score = int(score * 100)
+    log.debug('Popularity %s: %s', score, dataset_name)
     return score
