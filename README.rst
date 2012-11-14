@@ -32,6 +32,7 @@ Installation
 
       googleanalytics.id = UA-1010101-1
       googleanalytics.account = Account name (e.g. data.gov.uk, see top level item at https://www.google.com/analytics)
+      googleanalytics.token.filepath = ~/pyenv/token.dat
       ga-report.period = monthly
       ga-report.bounce_url = /
 
@@ -82,13 +83,17 @@ giving permission in the browser::
 
     $ paster getauthtoken --config=../ckan/development.ini
 
+Now ensure you reference the correct path to your token.dat in your CKAN config file (e.g. development.ini)::
+
+    googleanalytics.token.filepath = ~/pyenv/token.dat
+
 
 Tutorial
 --------
 
 Download some GA data and store it in CKAN's database. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file) and specifying the name of your auth file (token.dat by default) from the previous step::
 
-    $ paster loadanalytics token.dat latest --config=../ckan/development.ini
+    $ paster loadanalytics latest --config=../ckan/development.ini
 
 The value after the token file is how much data you want to retrieve, this can be
 

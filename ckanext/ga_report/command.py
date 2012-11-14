@@ -1,5 +1,8 @@
 import logging
 import datetime
+import os
+
+from pylons import config
 
 from ckan.lib.cli import CkanCommand
 # No other CKAN imports allowed until _load_config is run,
@@ -58,20 +61,17 @@ class LoadAnalytics(CkanCommand):
     """Get data from Google Analytics API and save it
     in the ga_model
 
-    Usage: paster loadanalytics <tokenfile> <time-period>
+    Usage: paster loadanalytics <time-period>
 
-    Where <tokenfile> is the name of the auth token file from
-    the getauthtoken step.
-
-    And where <time-period> is:
+    Where <time-period> is:
         all         - data for all time
         latest      - (default) just the 'latest' data
         YYYY-MM     - just data for the specific month
     """
     summary = __doc__.split('\n')[0]
     usage = __doc__
-    max_args = 2
-    min_args = 1
+    max_args = 1
+    min_args = 0
 
     def __init__(self, name):
         super(LoadAnalytics, self).__init__(name)
@@ -92,19 +92,25 @@ class LoadAnalytics(CkanCommand):
         from download_analytics import DownloadAnalytics
         from ga_auth import (init_service, get_profile_id)
 
+        ga_token_filepath = os.path.expanduser(config.get('googleanalytics.token.filepath', ''))
+        if not ga_token_filepath:
+            print 'ERROR: In the CKAN config you need to specify the filepath of the ' \
+                  'Google Analytics token file under key: googleanalytics.token.filepath'
+            return
+
         try:
-            svc = init_service(self.args[0], None)
+            svc = init_service(ga_token_filepath, None)
         except TypeError:
             print ('Have you correctly run the getauthtoken task and '
-                   'specified the correct token file?')
+                   'specified the correct token file in the CKAN config under '
+                   '"googleanalytics.token.filepath"?')
             return
 
         downloader = DownloadAnalytics(svc, profile_id=get_profile_id(svc),
                                        delete_first=self.options.delete_first,
                                        skip_url_stats=self.options.skip_url_stats)
 
-        time_period = self.args[1] if self.args and len(self.args) > 1 \
-            else 'latest'
+        time_period = self.args[0] if self.args else 'latest'
         if time_period == 'all':
             downloader.all_()
         elif time_period == 'latest':
