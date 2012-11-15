@@ -42,7 +42,7 @@
 	 </tr>
         <py:for each="publisher, views, visits in c.top_publishers">
 	  <tr>
-	    <td>${h.link_to(publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport', action='read_publisher', id=publisher.name))}
+	    <td>${h.link_to(publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport', action='read_publisher', id=publisher.name) + ("?month=" + c.month) if c.month else '')}
 	    </td>
 <!--	    <td>${visits}</td> -->
 	    <td>${views}</td>
