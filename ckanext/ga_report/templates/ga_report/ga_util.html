@@ -6,6 +6,14 @@
   py:strip=""
   >
 
+<select name="month" py:def="month_selector(current_month, months, day)">
+    <option value='' py:attrs="{'selected': 'selected' if not current_month else None}">All months</option>
+  <py:for each="i, (val,desc) in enumerate(months)">
+    <option value='${val}' py:attrs="{'selected': 'selected' if current_month == val else None}">${desc}<py:if test="i == 0 and day"> (up to ${day})</py:if></option>
+  </py:for>
+</select>
+
+
 <table py:def="social_table(items, with_source=False)" class="table table-condensed table-bordered table-striped">
     <tr>
         <th>Name</th>

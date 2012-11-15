@@ -27,13 +27,9 @@
 
       <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}" method="get">
           <div class="controls">
-          <select name="month">
-                <option value='' py:attrs="{'selected': 'selected' if not c.month else None}">All months</option>
 
-              <py:for each="val,desc in c.months">
-                <option value='${val}' py:attrs="{'selected': 'selected' if c.month == val else None}">${desc}</option>
-              </py:for>
-          </select>
+          ${month_selector(c.month, c.months, c.day)}
+
            <input class="btn button btn-primary" type='submit' value="Update"/>
           </div>
        </form>
