@@ -153,7 +153,8 @@ class DownloadAnalytics(object):
         data = collections.defaultdict(list)
         rows = results.get('rows',[])
         for row in rows:
-            data[_normalize_url(row[0])].append( (row[1], int(row[2]),) )
+            url = _normalize_url('http:/' + row[0])
+            data[url].append( (row[1], int(row[2]),) )
         ga_model.update_social(period_name, data)
 
 
