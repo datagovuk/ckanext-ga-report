@@ -50,9 +50,12 @@ def single_popular_dataset(top=20):
             dataset = model.Package.get(ga_url.url[len('/dataset/'):])
             if dataset and not dataset.state == 'active':
                 dataset = None
-                count += 1
-                if count > 10:
-                    break
+            # When testing, it is possible that top datasets are not available
+            # so only go round this loop a few times before falling back on
+            # a random dataset.
+            count += 1
+            if count > 10:
+                break
     if not dataset:
         # fallback
         dataset = model.Session.query(model.Package)\
