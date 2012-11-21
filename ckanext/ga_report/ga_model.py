@@ -47,6 +47,7 @@ stat_table = Table('ga_stat', metadata,
                   Column('id', types.UnicodeText, primary_key=True,
                          default=make_uuid),
                   Column('period_name', types.UnicodeText),
+                  Column('period_complete_day', types.UnicodeText),
                   Column('stat_name', types.UnicodeText),
                   Column('key', types.UnicodeText),
                   Column('value', types.UnicodeText), )
@@ -134,7 +135,7 @@ def _get_package_and_publisher(url):
             return None, publisher_match.groups()[0]
     return None, None
 
-def update_sitewide_stats(period_name, stat_name, data):
+def update_sitewide_stats(period_name, stat_name, data, period_complete_day):
     for k,v in data.iteritems():
         item = model.Session.query(GA_Stat).\
             filter(GA_Stat.period_name==period_name).\
@@ -144,11 +145,13 @@ def update_sitewide_stats(period_name, stat_name, data):
             item.period_name = period_name
             item.key = k
             item.value = v
+            item.period_complete_day = period_complete_day
             model.Session.add(item)
         else:
             # create the row
             values = {'id': make_uuid(),
                      'period_name': period_name,
+                     'period_complete_day': period_complete_day,
                      'key': k,
                      'value': v,
                      'stat_name': stat_name

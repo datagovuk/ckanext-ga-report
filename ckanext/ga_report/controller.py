@@ -22,12 +22,29 @@ def _get_month_name(strdate):
 
 
 def _month_details(cls):
-    '''Returns a list of all the month names'''
+    '''
+    Returns a list of all the periods for which we have data, unfortunately
+    knows too much about the type of the cls being passed as GA_Url has a
+    more complex query
+
+    This may need extending if we add a period_name to the stats
+    '''
     months = []
-    vals = model.Session.query(cls.period_name).filter(cls.period_name!='All').distinct().all()
+    day = None
+
+    vals = model.Session.query(cls.period_name,cls.period_complete_day)\
+        .filter(cls.period_name!='All').distinct(cls.period_name)\
+        .order_by("period_name desc").all()
+    if vals and vals[0][1]:
+        day = int(vals[0][1])
+        ordinal = 'th' if 11 <= day <= 13 \
+            else {1:'st',2:'nd',3:'rd'}.get(day % 10, 'th')
+        day = "{day}{ordinal}".format(day=day, ordinal=ordinal)
+
     for m in vals:
         months.append( (m[0], _get_month_name(m[0])))
-    return sorted(months, key=operator.itemgetter(0), reverse=True)
+
+    return months, day
 
 
 class GaReport(BaseController):
@@ -56,7 +73,7 @@ class GaReport(BaseController):
 
         # Get the month details by fetching distinct values and determining the
         # month names from the values.
-        c.months = _month_details(GA_Stat)
+        c.months, c.day = _month_details(GA_Stat)
 
         # Work out which month to show, based on query params of the first item
         c.month_desc = 'all months'
@@ -220,7 +237,7 @@ class GaDatasetReport(BaseController):
 
         # Get the month details by fetching distinct values and determining the
         # month names from the values.
-        c.months = _month_details(GA_Url)
+        c.months, c.day = _month_details(GA_Url)
 
         # Work out which month to show, based on query params of the first item
         c.month = request.params.get('month', '')
@@ -278,7 +295,7 @@ class GaDatasetReport(BaseController):
 
         # Get the month details by fetching distinct values and determining the
         # month names from the values.
-        c.months = _month_details(GA_Url)
+        c.months, c.day = _month_details(GA_Url)
 
         # Work out which month to show, based on query params of the first item
         c.month = request.params.get('month', '')

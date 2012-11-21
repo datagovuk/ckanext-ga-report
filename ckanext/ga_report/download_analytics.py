@@ -126,7 +126,7 @@ class DownloadAnalytics(object):
                 ga_model.update_publisher_stats(period_name) # about 30 seconds.
 
             log.info('Downloading and storing analytics for site-wide stats')
-            self.sitewide_stats( period_name )
+            self.sitewide_stats( period_name, period_complete_day )
 
             log.info('Downloading and storing analytics for social networks')
             self.update_social_info(period_name, start_date, end_date)
@@ -153,7 +153,8 @@ class DownloadAnalytics(object):
         data = collections.defaultdict(list)
         rows = results.get('rows',[])
         for row in rows:
-            data[_normalize_url(row[0])].append( (row[1], int(row[2]),) )
+            url = _normalize_url('http:/' + row[0])
+            data[url].append( (row[1], int(row[2]),) )
         ga_model.update_social(period_name, data)
 
 
@@ -194,7 +195,7 @@ class DownloadAnalytics(object):
         if 'url' in data:
             ga_model.update_url_stats(period_name, period_complete_day, data['url'])
 
-    def sitewide_stats(self, period_name):
+    def sitewide_stats(self, period_name, period_complete_day):
         import calendar
         year, month = period_name.split('-')
         _, last_day_of_month = calendar.monthrange(int(year), int(month))
@@ -205,7 +206,7 @@ class DownloadAnalytics(object):
                  '_locale_stats', '_browser_stats', '_mobile_stats']
         for f in funcs:
             log.info('Downloading analytics for %s' % f.split('_')[1])
-            getattr(self, f)(start_date, end_date, period_name)
+            getattr(self, f)(start_date, end_date, period_name, period_complete_day)
 
     def _get_results(result_data, f):
         data = {}
@@ -214,7 +215,7 @@ class DownloadAnalytics(object):
             data[key] = data.get(key,0) + result[1]
         return data
 
-    def _totals_stats(self, start_date, end_date, period_name):
+    def _totals_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Fetches distinct totals, total pageviews etc """
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
@@ -224,7 +225,8 @@ class DownloadAnalytics(object):
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')
-        ga_model.update_sitewide_stats(period_name, "Totals", {'Total page views': result_data[0][0]})
+        ga_model.update_sitewide_stats(period_name, "Totals", {'Total page views': result_data[0][0]},
+            period_complete_day)
 
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
@@ -239,7 +241,7 @@ class DownloadAnalytics(object):
             'New visits': result_data[0][2],
             'Total visits': result_data[0][3],
         }
-        ga_model.update_sitewide_stats(period_name, "Totals", data)
+        ga_model.update_sitewide_stats(period_name, "Totals", data, period_complete_day)
 
         # Bounces from / or another configurable page.
         path = '/%s%s' % (config.get('googleanalytics.account'),
@@ -261,10 +263,11 @@ class DownloadAnalytics(object):
         bounces, total = [float(x) for x in result_data[0][1:]]
         pct = 100 * bounces/total
         log.info('%d bounces from %d total == %s', bounces, total, pct)
-        ga_model.update_sitewide_stats(period_name, "Totals", {'Bounce rate (home page)': pct})
+        ga_model.update_sitewide_stats(period_name, "Totals", {'Bounce rate (home page)': pct},
+            period_complete_day)
 
 
-    def _locale_stats(self, start_date, end_date, period_name):
+    def _locale_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Fetches stats about language and country """
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
@@ -279,16 +282,16 @@ class DownloadAnalytics(object):
         for result in result_data:
             data[result[0]] = data.get(result[0], 0) + int(result[2])
         self._filter_out_long_tail(data, MIN_VIEWS)
-        ga_model.update_sitewide_stats(period_name, "Languages", data)
+        ga_model.update_sitewide_stats(period_name, "Languages", data, period_complete_day)
 
         data = {}
         for result in result_data:
             data[result[1]] = data.get(result[1], 0) + int(result[2])
         self._filter_out_long_tail(data, MIN_VIEWS)
-        ga_model.update_sitewide_stats(period_name, "Country", data)
+        ga_model.update_sitewide_stats(period_name, "Country", data, period_complete_day)
 
 
-    def _social_stats(self, start_date, end_date, period_name):
+    def _social_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Finds out which social sites people are referred from """
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
@@ -304,10 +307,10 @@ class DownloadAnalytics(object):
             if not result[0] == '(not set)':
                 data[result[0]] = data.get(result[0], 0) + int(result[2])
         self._filter_out_long_tail(data, 3)
-        ga_model.update_sitewide_stats(period_name, "Social sources", data)
+        ga_model.update_sitewide_stats(period_name, "Social sources", data, period_complete_day)
 
 
-    def _os_stats(self, start_date, end_date, period_name):
+    def _os_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Operating system stats """
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
@@ -322,17 +325,17 @@ class DownloadAnalytics(object):
         for result in result_data:
             data[result[0]] = data.get(result[0], 0) + int(result[2])
         self._filter_out_long_tail(data, MIN_VIEWS)
-        ga_model.update_sitewide_stats(period_name, "Operating Systems", data)
+        ga_model.update_sitewide_stats(period_name, "Operating Systems", data, period_complete_day)
 
         data = {}
         for result in result_data:
             if int(result[2]) >= MIN_VIEWS:
                 key = "%s %s" % (result[0],result[1])
                 data[key] = result[2]
-        ga_model.update_sitewide_stats(period_name, "Operating Systems versions", data)
+        ga_model.update_sitewide_stats(period_name, "Operating Systems versions", data, period_complete_day)
 
 
-    def _browser_stats(self, start_date, end_date, period_name):
+    def _browser_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Information about browsers and browser versions """
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
@@ -349,14 +352,14 @@ class DownloadAnalytics(object):
         for result in result_data:
             data[result[0]] = data.get(result[0], 0) + int(result[2])
         self._filter_out_long_tail(data, MIN_VIEWS)
-        ga_model.update_sitewide_stats(period_name, "Browsers", data)
+        ga_model.update_sitewide_stats(period_name, "Browsers", data, period_complete_day)
 
         data = {}
         for result in result_data:
             key = "%s %s" % (result[0], self._filter_browser_version(result[0], result[1]))
             data[key] = data.get(key, 0) + int(result[2])
         self._filter_out_long_tail(data, MIN_VIEWS)
-        ga_model.update_sitewide_stats(period_name, "Browser versions", data)
+        ga_model.update_sitewide_stats(period_name, "Browser versions", data, period_complete_day)
 
     @classmethod
     def _filter_browser_version(cls, browser, version_str):
@@ -380,7 +383,7 @@ class DownloadAnalytics(object):
                 ver = ver[0] + ver[1] + 'X' * num_hidden_digits
         return ver
 
-    def _mobile_stats(self, start_date, end_date, period_name):
+    def _mobile_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Info about mobile devices """
 
         results = self.service.data().ga().get(
@@ -397,13 +400,13 @@ class DownloadAnalytics(object):
         for result in result_data:
             data[result[0]] = data.get(result[0], 0) + int(result[2])
         self._filter_out_long_tail(data, MIN_VIEWS)
-        ga_model.update_sitewide_stats(period_name, "Mobile brands", data)
+        ga_model.update_sitewide_stats(period_name, "Mobile brands", data, period_complete_day)
 
         data = {}
         for result in result_data:
             data[result[1]] = data.get(result[1], 0) + int(result[2])
         self._filter_out_long_tail(data, MIN_VIEWS)
-        ga_model.update_sitewide_stats(period_name, "Mobile devices", data)
+        ga_model.update_sitewide_stats(period_name, "Mobile devices", data, period_complete_day)
 
     @classmethod
     def _filter_out_long_tail(cls, data, threshold=10):
