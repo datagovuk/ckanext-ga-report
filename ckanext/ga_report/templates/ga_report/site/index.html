@@ -5,7 +5,7 @@
 
   <xi:include href="../ga_util.html" />
 
-  <py:def function="page_title">Site usage</py:def>
+  <py:def function="page_title"></py:def>
 
   <py:match path="primarysidebar">
     <li class="widget-container boxed widget_text">
@@ -19,15 +19,15 @@
   </py:match>
 
   <div py:match="content">
-      <h1>Site Usage</h1>
+      <h1 id="title">Site Usage</h1>
       ${usage_nav('Site-wide')}
 
-      <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
+      <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get" onsubmit="return update_hash();">
           <div class="controls">
 
           ${month_selector(c.month, c.months, c.day)}
 
-           <input class="btn button btn-primary" type='submit' value="Update"/>
+           <input class="btn button btn-primary" type='submit' id="submit_month" value="Update"/>
           </div>
        </form>
 
@@ -117,16 +117,27 @@
 
   <xi:include href="../../layout.html" />
 
-  <py:def function="optional_footer">
     <script type='text/javascript'>
+        var active_hash = '#totals';
+        if (window.location.hash) {
+            active_hash = window.location.hash
+        }
+
         $('.dropdown-toggle').dropdown();
         $('.nav-tabs li a').click(function (e) {
+          active_hash = $(this).attr('href')
           e.preventDefault();
           $(this).tab('show');
         })
-        alert(window.location.hash);
+
+        function update_hash(frm) {
+            var url = "${h.url_for(controller='ckanext.ga_report.controller:GaReport',
+                                  action='index')}" + active_hash;
+            window.location.href = url
+            return false;
+        }
+
     </script>
-  </py:def>
 </html>
 
 
