@@ -343,7 +343,7 @@ def delete(period_name):
     '''
     for object_type in (GA_Url, GA_Stat, GA_Publisher, GA_ReferralStat):
         q = model.Session.query(object_type)
-        if period_name != 'all':
+        if period_name != 'All':
             q = q.filter_by(period_name=period_name)
         q.delete()
     model.Session.commit()
