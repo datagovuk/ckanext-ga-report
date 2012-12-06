@@ -173,7 +173,7 @@ def pre_update_url_stats(period_name):
     log.debug("Query: %s" % model.Session.query(GA_Url).
             filter(GA_Url.period_name == 'All'))
 
-    model.Session.clufhs()
+    model.Session.flush()
     model.Session.commit()
     model.repo.commit_and_remove()
 
