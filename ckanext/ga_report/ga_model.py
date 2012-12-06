@@ -164,7 +164,10 @@ def pre_update_url_stats(period_name):
     log.debug("Deleting '%s' records" % period_name)
     model.Session.query(GA_Url).\
             filter(GA_Url.period_name==period_name).delete()
-    log.debug("Deleting 'All' records")
+
+    count = model.Session.query(GA_Url).\
+            filter(GA_Url.period_name == 'All').count()
+    log.debug("Deleting %d 'All' records" % count)
     model.Session.query(GA_Url).\
             filter(GA_Url.period_name == 'All').delete()
     model.repo.commit_and_remove()
@@ -349,7 +352,7 @@ def delete(period_name):
         if period_name != 'All':
             q = q.filter_by(period_name=period_name)
         q.delete()
-    model.Session.commit()
+    model.repo.commit_and_remove()
 
 def get_score_for_dataset(dataset_name):
     '''
