@@ -161,10 +161,13 @@ def update_sitewide_stats(period_name, stat_name, data, period_complete_day):
 
 
 def pre_update_url_stats(period_name):
+    log.debug("Deleting '%s' records" % period_name)
     model.Session.query(GA_Url).\
             filter(GA_Url.period_name==period_name).delete()
+    log.debug("Deleting 'All' records")
     model.Session.query(GA_Url).\
-            filter(GA_Url.period_name=='All').delete()
+            filter(GA_Url.period_name == 'All').delete()
+    model.repo.commit_and_remove()
 
 
 def update_url_stats(period_name, period_complete_day, url_data):
@@ -216,8 +219,8 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'period_name': 'All',
                       'period_complete_day': 0,
                       'url': url,
-                      'pageviews': sum([int(e.pageviews) for e in entries]) + old_pageviews,
-                      'visits': sum([int(e.visits or 0) for e in entries]) + old_visits,
+                      'pageviews': sum([int(e.pageviews) for e in entries]) + int(old_pageviews),
+                      'visits': sum([int(e.visits or 0) for e in entries]) + int(old_visits),
                       'department_id': publisher,
                       'package_id': package
                      }
