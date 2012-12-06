@@ -168,10 +168,9 @@ def pre_update_url_stats(period_name):
     count = model.Session.query(GA_Url).\
             filter(GA_Url.period_name == 'All').count()
     log.debug("Deleting %d 'All' records" % count)
-    model.Session.query(GA_Url).\
+    count = model.Session.query(GA_Url).\
             filter(GA_Url.period_name == 'All').delete()
-    log.debug("Query: %s" % model.Session.query(GA_Url).
-            filter(GA_Url.period_name == 'All'))
+    log.debug("Deleted %d 'All' records" % count)
 
     model.Session.flush()
     model.Session.commit()
