@@ -114,7 +114,7 @@ class GaReport(BaseController):
                 if k in ['Total page views', 'Total visits']:
                     v = sum(v)
                 else:
-                    v = float(sum(v))/len(v)
+                    v = float(sum(v))/float(len(v))
                 key, val = clean_key(k,v)
 
                 c.global_totals.append((key, val))
