@@ -250,7 +250,7 @@ class DownloadAnalytics(object):
                                  ids='ga:' + self.profile_id,
                                  filters='ga:pagePath==%s' % (path,),
                                  start_date=start_date,
-                                 metrics='ga:bounces,ga:pageviews',
+                                 metrics='ga:visitBounceRate',
                                  dimensions='ga:pagePath',
                                  max_results=10000,
                                  end_date=end_date).execute()
@@ -260,10 +260,10 @@ class DownloadAnalytics(object):
                       path, result_data)
             return
         results = result_data[0]
-        bounces, total = [float(x) for x in result_data[0][1:]]
-        pct = 100 * bounces/total
-        log.info('%d bounces from %d total == %s', bounces, total, pct)
-        ga_model.update_sitewide_stats(period_name, "Totals", {'Bounce rate (home page)': pct},
+        bounces = float(results[1])
+        # visitBounceRate is already a %
+        log.info('Google reports visitBounceRate as %s', bounces)
+        ga_model.update_sitewide_stats(period_name, "Totals", {'Bounce rate (home page)': float(bounces)},
             period_complete_day)
 
 
