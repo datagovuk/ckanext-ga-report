@@ -4,12 +4,14 @@ import sys
 import logging
 import operator
 import collections
+import json
 from ckan.lib.base import (BaseController, c, g, render, request, response, abort)
 
 import sqlalchemy
 from sqlalchemy import func, cast, Integer
 import ckan.model as model
 from ga_model import GA_Url, GA_Stat, GA_ReferralStat, GA_Publisher
+from graph_data import CHARTS
 
 log = logging.getLogger('ckanext.ga-report')
 
@@ -178,6 +180,23 @@ class GaReport(BaseController):
             setattr(c, v, [(k,_percent(v,total)) for k,v in entries ])
 
         return render('ga_report/site/index.html')
+
+    def chart(self):
+        """
+            Provides chart data to the client based on the named chart.
+            This is a JSONP request and so a callback should also be
+            specified.
+        """
+        name = request.params.get('name')
+        callback = request.params.get('callback')
+        if not callback or not name:
+            abort(404, 'The name of the graph must be specified')
+
+        fn, title, key = CHARTS[name]
+        data = fn('',title, key)
+
+        response.headers['Content-Type'] = "application/x-javascript; charset=utf-8"
+        return "%s(%s)" % (callback, json.dumps(data),)
 
 
 class GaDatasetReport(BaseController):

@@ -65,6 +65,49 @@
       </ul>
       <div class="tab-content">
         <div class="tab-pane active" id="totals">
+             <h3>Average time on site</h3>
+             <div class="chart_container">
+               <div id="totals_graph_yaxis" class="yaxis"></div>
+               <div id="totals_graph" class="chart"></div>
+             </div>
+
+             <br/>
+             <h3>Bounce rate (home page)</h3>
+             <div class="chart_container">
+               <div id="bounce_graph_yaxis" class="yaxis"></div>
+               <div id="bounce_graph" class="chart"></div>
+             </div>
+
+             <br/>
+             <h3>New visits</h3>
+             <div class="chart_container">
+               <div id="new_visits_graph_yaxis" class="yaxis"></div>
+               <div id="new_visits_graph" class="chart"></div>
+             </div>
+
+             <br/>
+             <h3>Pages per visit</h3>
+             <div class="chart_container">
+               <div id="pages_per_visit_graph_yaxis" class="yaxis"></div>
+               <div id="pages_per_visit_graph" class="chart"></div>
+             </div>
+
+             <br/>
+             <h3>Total visits</h3>
+             <div class="chart_container">
+               <div id="total_visits_graph_yaxis" class="yaxis"></div>
+               <div id="total_visits_graph" class="chart"></div>
+             </div>
+
+             <br/>
+             <h3>Total page views</h3>
+             <div class="chart_container">
+               <div id="total_pageviews_graph_yaxis" class="yaxis"></div>
+               <div id="total_pageviews_graph" class="chart"></div>
+             </div>
+
+             <br/>
+             <p>Left in for comparison</p>
              <table class="table table-condensed table-bordered table-striped">
             	 <tr>
             	   <th>Name</th>
@@ -114,19 +157,34 @@
 
 
   </div>
+  <py:def function="optional_footer">
+    <link href="/css/rickshaw.min.css" rel="stylesheet"/>
+    <script src="/js/d3.min.js"></script>
+    <script src="/js/d3.layout.min.js"></script>
+    <script src="/js/rickshaw.min.js"></script>
+    <script src="/js/ga_graphs.js"></script>
+
+    <script type='text/javascript'>
+      $('a[data-toggle="tab"]').on('shown', function (e) {
+        var tgt = $(e.target).attr('href') + "_graph";
+        if ($(tgt).children().length == 0 ) {
+          show_graph($(e.target).attr('href').substr(1), $(tgt))
+        }
+      })
+
+      barChart("totals", "totals_graph")
+      barChart("bounce", "bounce_graph")
+      lineChart("new_visits", "new_visits_graph")
+
+      lineChart("pages_per_visit", "pages_per_visit_graph")
+      lineChart("total_visits", "total_visits_graph")
+      lineChart("total_pageviews", "total_pageviews_graph")
+
+    </script>
+  </py:def>
 
   <xi:include href="../../layout.html" />
 
-  <py:def function="optional_footer">
-    <script type='text/javascript'>
-        $('.dropdown-toggle').dropdown();
-        $('.nav-tabs li a').click(function (e) {
-          e.preventDefault();
-          $(this).tab('show');
-        })
-        alert(window.location.hash);
-    </script>
-  </py:def>
 </html>
 
 

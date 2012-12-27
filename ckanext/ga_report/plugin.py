@@ -38,6 +38,11 @@ class GAReportPlugin(p.SingletonPlugin):
             action='index'
         )
         map.connect(
+            '/data/site-usage/chart',
+            controller='ckanext.ga_report.controller:GaReport',
+            action='chart'
+        )
+        map.connect(
             '/data/site-usage/data_{month}.csv',
             controller='ckanext.ga_report.controller:GaReport',
             action='csv'
