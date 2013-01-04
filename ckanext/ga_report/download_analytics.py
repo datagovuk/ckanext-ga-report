@@ -306,6 +306,8 @@ class DownloadAnalytics(object):
         result_data = results.get('rows')
         # [[url, count], [url],count]
         data = {}
+        if not result_data:
+            log.error(results)
         for result in result_data:
             data[result[0]] = data.get(result[0], 0) + int(result[1])
         self._filter_out_long_tail(data, MIN_DOWNLOADS)
