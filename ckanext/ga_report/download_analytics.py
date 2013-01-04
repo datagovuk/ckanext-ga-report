@@ -304,10 +304,14 @@ class DownloadAnalytics(object):
                                  max_results=10000,
                                  end_date=end_date).execute()
         result_data = results.get('rows')
+        if not result_data:
+            # We may not have data for this time period, so we need to bail
+            # early.
+            log.info("There is no downloads data for this time period")
+            return
+
         # [[url, count], [url],count]
         data = {}
-        if not result_data:
-            log.error(results)
         for result in result_data:
             data[result[0]] = data.get(result[0], 0) + int(result[1])
         self._filter_out_long_tail(data, MIN_DOWNLOADS)
