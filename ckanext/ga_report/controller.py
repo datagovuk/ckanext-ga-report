@@ -217,7 +217,6 @@ class GaReport(BaseController):
         q = q.order_by("ga_stat.value::int desc")
 
         for entry in q.all():
-            print entry.key
             r = model.Session.query(model.Resource).filter(model.Resource.url==entry.key).first()
             if r:
                 c.downloads.append((r,entry.value))
