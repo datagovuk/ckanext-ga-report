@@ -1,6 +1,7 @@
 *.py[co]
 *.py~
 .gitignore
+ckan.log
 
 # Packages
 *.egg

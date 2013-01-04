@@ -52,7 +52,7 @@ class GaReport(BaseController):
     def csv(self, month):
         import csv
 
-        q = model.Session.query(GA_Stat)
+        q = model.Session.query(GA_Stat).filter(GA_Stat.stat_name!='Downloads')
         if month != 'all':
             q = q.filter(GA_Stat.period_name==month)
         entries = q.order_by('GA_Stat.period_name, GA_Stat.stat_name, GA_Stat.key').all()
@@ -68,6 +68,26 @@ class GaReport(BaseController):
                              entry.stat_name.encode('utf-8'),
                              entry.key.encode('utf-8'),
                              entry.value.encode('utf-8')])
+
+    def csv_downloads(self, month):
+        import csv
+
+        q = model.Session.query(GA_Stat).filter(GA_Stat.stat_name=='Downloads')
+        if month != 'all':
+            q = q.filter(GA_Stat.period_name==month)
+        entries = q.order_by('GA_Stat.period_name, GA_Stat.key').all()
+
+        response.headers['Content-Type'] = "text/csv; charset=utf-8"
+        response.headers['Content-Disposition'] = str('attachment; filename=downloads_%s.csv' % (month,))
+
+        writer = csv.writer(response)
+        writer.writerow(["Period", "Resource URL", "Count"])
+
+        for entry in entries:
+            writer.writerow([entry.period_name.encode('utf-8'),
+                             entry.key.encode('utf-8'),
+                             entry.value.encode('utf-8')])
+
 
     def index(self):
 
@@ -178,6 +198,33 @@ class GaReport(BaseController):
             setattr(c, v, [(k,_percent(v,total)) for k,v in entries ])
 
         return render('ga_report/site/index.html')
+
+    def downloads(self):
+
+        # Get the month details by fetching distinct values and determining the
+        # month names from the values.
+        c.months, c.day = _month_details(GA_Stat)
+
+        # Work out which month to show, based on query params of the first item
+        c.month_desc = 'all months'
+        c.month = request.params.get('month', '')
+        if c.month:
+            c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
+
+        c.downloads = []
+        q = model.Session.query(GA_Stat).filter(GA_Stat.stat_name=='Downloads')
+        q = q.filter(GA_Stat.period_name==c.month) if c.month else q
+        q = q.order_by("ga_stat.value::int desc")
+
+        for entry in q.all():
+            print entry.key
+            r = model.Session.query(model.Resource).filter(model.Resource.url==entry.key).first()
+            if r:
+                c.downloads.append((r,entry.value))
+            else:
+                log.info("Failed to find resource for %s" % entry.key)
+
+        return render('ga_report/site/downloads.html')
 
 
 class GaDatasetReport(BaseController):

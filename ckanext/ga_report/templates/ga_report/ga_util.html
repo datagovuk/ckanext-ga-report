@@ -44,6 +44,23 @@
  </table>
 
 
+<table py:def="downloads_table(items)" class="table table-condensed table-bordered table-striped">
+    <tr>
+        <th>Name</th>
+        <th>Downloads</th>
+    </tr>
+    <py:for each="resource, value in items">
+    <tr>
+        <td>
+          <strong>${resource.resource_group.package.title}</strong><br/>
+          ${h.link_to((resource.name or resource.description).strip() or "No name", h.url_for(controller='package', action='resource_read', id=resource.resource_group.package.name, resource_id=resource.id))}<br/>
+        </td>
+        <td>${value}</td>
+    </tr>
+    </py:for>
+ </table>
+
+
 <div py:def="usage_nav(active_name)" id="minornavigation">
     <div id="minornavigation-bg-left">
     <div id="minornavigation-bg-right">
@@ -54,6 +71,9 @@
         </li>
         <li py:attrs="{'class': 'active' if active_name=='Datasets' else None}">
                 <a py:attrs="{'class': 'active' if active_name=='Datasets' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Datasets</a>
+        </li>
+        <li py:attrs="{'class': 'active' if active_name=='Downloads' else None}">
+                <a py:attrs="{'class': 'active' if active_name=='Downloads' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='downloads')}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Downloads</a>
         </li>
       </ul>
     </div>

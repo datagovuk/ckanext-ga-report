@@ -13,6 +13,7 @@ log = logging.getLogger('ckanext.ga-report')
 FORMAT_MONTH = '%Y-%m'
 MIN_VIEWS = 50
 MIN_VISITS = 20
+MIN_DOWNLOADS = 10
 
 class DownloadAnalytics(object):
     '''Downloads and stores analytics info'''
@@ -203,7 +204,7 @@ class DownloadAnalytics(object):
         start_date = '%s-01' % period_name
         end_date = '%s-%s' % (period_name, last_day_of_month)
         funcs = ['_totals_stats', '_social_stats', '_os_stats',
-                 '_locale_stats', '_browser_stats', '_mobile_stats']
+                 '_locale_stats', '_browser_stats', '_mobile_stats', '_download_stats']
         for f in funcs:
             log.info('Downloading analytics for %s' % f.split('_')[1])
             getattr(self, f)(start_date, end_date, period_name, period_complete_day)
@@ -290,6 +291,25 @@ class DownloadAnalytics(object):
         self._filter_out_long_tail(data, MIN_VIEWS)
         ga_model.update_sitewide_stats(period_name, "Country", data, period_complete_day)
 
+
+    def _download_stats(self, start_date, end_date, period_name, period_complete_day):
+        """ Fetches stats about language and country """
+        results = self.service.data().ga().get(
+                                 ids='ga:' + self.profile_id,
+                                 start_date=start_date,
+                                 filters='ga:eventAction==download',
+                                 metrics='ga:totalEvents',
+                                 sort='-ga:totalEvents',
+                                 dimensions="ga:eventLabel",
+                                 max_results=10000,
+                                 end_date=end_date).execute()
+        result_data = results.get('rows')
+        # [[url, count], [url],count]
+        data = {}
+        for result in result_data:
+            data[result[0]] = data.get(result[0], 0) + int(result[1])
+        self._filter_out_long_tail(data, MIN_DOWNLOADS)
+        ga_model.update_sitewide_stats(period_name, "Downloads", data, period_complete_day)
 
     def _social_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Finds out which social sites people are referred from """
