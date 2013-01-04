@@ -216,12 +216,17 @@ class GaReport(BaseController):
         q = q.filter(GA_Stat.period_name==c.month) if c.month else q
         q = q.order_by("ga_stat.value::int desc")
 
+        data = collections.defaultdict(int)
         for entry in q.all():
             r = model.Session.query(model.Resource).filter(model.Resource.url==entry.key).first()
-            if r:
-                c.downloads.append((r,entry.value))
-            else:
-                log.info("Failed to find resource for %s" % entry.key)
+            if not r:
+                continue
+            data[r] += int(entry.value)
+
+        for k,v in data.iteritems():
+            c.downloads.append((k,v))
+
+        c.downloads = sorted(c.downloads, key=operator.itemgetter(1), reverse=True)
 
         return render('ga_report/site/downloads.html')
 
