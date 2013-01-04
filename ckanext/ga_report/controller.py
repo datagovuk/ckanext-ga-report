@@ -223,9 +223,7 @@ class GaReport(BaseController):
                 continue
             data[r] += int(entry.value)
 
-        for k,v in data.iteritems():
-            c.downloads.append((k,v))
-
+        c.downloads = [(k,v,) for k,v in data.iteritems()]
         c.downloads = sorted(c.downloads, key=operator.itemgetter(1), reverse=True)
 
         return render('ga_report/site/downloads.html')

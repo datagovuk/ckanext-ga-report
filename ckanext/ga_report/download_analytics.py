@@ -307,7 +307,7 @@ class DownloadAnalytics(object):
         if not result_data:
             # We may not have data for this time period, so we need to bail
             # early.
-            log.info("There is no downloads data for this time period")
+            log.info("There is no download data for this time period")
             return
 
         # [[url, count], [url],count]
