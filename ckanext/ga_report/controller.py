@@ -21,7 +21,7 @@ def _get_month_name(strdate):
     return '%s %s' % (calendar.month_name[d.tm_mon], d.tm_year)
 
 
-def _month_details(cls):
+def _month_details(cls, stat_key=None):
     '''
     Returns a list of all the periods for which we have data, unfortunately
     knows too much about the type of the cls being passed as GA_Url has a
@@ -32,9 +32,12 @@ def _month_details(cls):
     months = []
     day = None
 
-    vals = model.Session.query(cls.period_name,cls.period_complete_day)\
-        .filter(cls.period_name!='All').distinct(cls.period_name)\
-        .order_by("period_name desc").all()
+    q = model.Session.query(cls.period_name,cls.period_complete_day)\
+        .filter(cls.period_name!='All').distinct(cls.period_name)
+    if stat_key:
+        q=  q.filter(cls.stat_name==stat_key)
+
+    vals = q.order_by("period_name desc").all()
     if vals and vals[0][1]:
         day = int(vals[0][1])
         ordinal = 'th' if 11 <= day <= 13 \
@@ -203,7 +206,7 @@ class GaReport(BaseController):
 
         # Get the month details by fetching distinct values and determining the
         # month names from the values.
-        c.months, c.day = _month_details(GA_Stat)
+        c.months, c.day = _month_details(GA_Stat, "Downloads")
 
         # Work out which month to show, based on query params of the first item
         c.month_desc = 'all months'
