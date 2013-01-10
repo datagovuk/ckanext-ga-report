@@ -7,6 +7,17 @@
 
   <py:def function="page_title">Site usage</py:def>
 
+  <py:def function="optional_head">
+    <script type="text/javascript" src="/scripts/vendor/jquery.sparkline.modified.js"></script>
+    <style type="text/css">
+      .table-condensed td.sparkline-cell {
+        padding: 1px 0 0 0;
+        width: 108px;
+        text-align: center;
+      }
+    </style>
+  </py:def>
+
   <py:match path="primarysidebar">
     <li class="widget-container boxed widget_text">
       <h4>Download</h4>
@@ -69,11 +80,17 @@
             	 <tr>
             	   <th>Name</th>
             	   <th>Value</th>
+            	   <th>History</th>
             	 </tr>
-                <py:for each="name, value in c.global_totals">
+                <py:for each="name, value, graph in c.global_totals">
                     <tr>
                         <td>${name}</td>
                         <td>${value}</td>
+                        <td class="sparkline-cell">
+                          <span class="sparkline" sparkTooltips="${','.join([x for x,y in graph])}">
+                            ${','.join([y for x,y in graph])}
+                          </span>
+                        </td>
                     </tr>
                 </py:for>
                </table>
@@ -115,18 +132,29 @@
 
   </div>
 
-  <xi:include href="../../layout.html" />
 
   <py:def function="optional_footer">
-    <script type='text/javascript'>
-        $('.dropdown-toggle').dropdown();
-        $('.nav-tabs li a').click(function (e) {
-          e.preventDefault();
-          $(this).tab('show');
-        })
-        alert(window.location.hash);
+    <script type="text/javascript">
+      $(function() {
+          var sparkOptions = {
+            enableTagOptions: true,
+            type: 'line',
+            width: 100,
+            height: 26,
+            chartRangeMin: 0,
+            spotColor: '',
+            maxSpotColor: '',
+            minSpotColor: '',
+            highlightSpotColor: '000000',
+            lineColor: '3F8E6D',
+            fillColor: 'B7E66B'
+          };
+          $('.sparkline').sparkline('html',sparkOptions);
+      });
     </script>
   </py:def>
+
+  <xi:include href="../../layout.html" />
 </html>
 
 

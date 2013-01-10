@@ -107,11 +107,26 @@ class GaReport(BaseController):
 
             return key, val
 
+        # Query historic values for sparkline rendering
+        graph_query = model.Session.query(GA_Stat)\
+                .filter(GA_Stat.stat_name=='Totals')\
+                .order_by(GA_Stat.period_name)
+        graph_data = {}
+        for x in graph_query:
+            graph_data[x.key] = graph_data.get(x.key,[])
+            key, val = clean_key(x.key,float(x.value))
+            tooltip = '%s: %s' % (_get_month_name(x.period_name), val)
+            graph_data[x.key].append( (tooltip,x.value) )
+        # Trim the latest month, as it looks like a huge dropoff
+        for key in graph_data:
+            graph_data[key] = graph_data[key][:-1]
+
         c.global_totals = []
         if c.month:
             for e in entries:
                 key, val = clean_key(e.key, e.value)
-                c.global_totals.append((key, val))
+                sparkline = graph_data[e.key]
+                c.global_totals.append((key, val, sparkline))
         else:
             d = collections.defaultdict(list)
             for e in entries:
@@ -121,9 +136,10 @@ class GaReport(BaseController):
                     v = sum(v)
                 else:
                     v = float(sum(v))/float(len(v))
+                sparkline = graph_data[k]
                 key, val = clean_key(k,v)
 
-                c.global_totals.append((key, val))
+                c.global_totals.append((key, val, sparkline))
                 c.global_totals = sorted(c.global_totals, key=operator.itemgetter(0))
 
         keys = {
@@ -178,7 +194,7 @@ class GaReport(BaseController):
             # Get the total for each set of values and then set the value as
             # a percentage of the total
             if k == 'Social sources':
-                total = sum([x for n,x in c.global_totals if n == 'Total visits'])
+                total = sum([x for n,x,graph in c.global_totals if n == 'Total visits'])
             else:
                 total = sum([num for _,num in entries])
             setattr(c, v, [(k,_percent(v,total)) for k,v in entries ])
