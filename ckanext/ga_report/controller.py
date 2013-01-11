@@ -13,6 +13,7 @@ from ga_model import GA_Url, GA_Stat, GA_ReferralStat, GA_Publisher
 
 log = logging.getLogger('ckanext.ga-report')
 
+DOWNLOADS_AVAILABLE_FROM = '2012-12'
 
 def _get_month_name(strdate):
     import calendar
@@ -38,6 +39,7 @@ def _month_details(cls, stat_key=None):
         q=  q.filter(cls.stat_name==stat_key)
 
     vals = q.order_by("period_name desc").all()
+
     if vals and vals[0][1]:
         day = int(vals[0][1])
         ordinal = 'th' if 11 <= day <= 13 \
@@ -69,25 +71,6 @@ class GaReport(BaseController):
         for entry in entries:
             writer.writerow([entry.period_name.encode('utf-8'),
                              entry.stat_name.encode('utf-8'),
-                             entry.key.encode('utf-8'),
-                             entry.value.encode('utf-8')])
-
-    def csv_downloads(self, month):
-        import csv
-
-        q = model.Session.query(GA_Stat).filter(GA_Stat.stat_name=='Downloads')
-        if month != 'all':
-            q = q.filter(GA_Stat.period_name==month)
-        entries = q.order_by('GA_Stat.period_name, GA_Stat.key').all()
-
-        response.headers['Content-Type'] = "text/csv; charset=utf-8"
-        response.headers['Content-Disposition'] = str('attachment; filename=downloads_%s.csv' % (month,))
-
-        writer = csv.writer(response)
-        writer.writerow(["Period", "Resource URL", "Count"])
-
-        for entry in entries:
-            writer.writerow([entry.period_name.encode('utf-8'),
                              entry.key.encode('utf-8'),
                              entry.value.encode('utf-8')])
 
@@ -202,35 +185,6 @@ class GaReport(BaseController):
 
         return render('ga_report/site/index.html')
 
-    def downloads(self):
-
-        # Get the month details by fetching distinct values and determining the
-        # month names from the values.
-        c.months, c.day = _month_details(GA_Stat, "Downloads")
-
-        # Work out which month to show, based on query params of the first item
-        c.month_desc = 'all months'
-        c.month = request.params.get('month', '')
-        if c.month:
-            c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
-
-        c.downloads = []
-        q = model.Session.query(GA_Stat).filter(GA_Stat.stat_name=='Downloads')
-        q = q.filter(GA_Stat.period_name==c.month) if c.month else q
-        q = q.order_by("ga_stat.value::int desc")
-
-        data = collections.defaultdict(int)
-        for entry in q.all():
-            r = model.Session.query(model.Resource).filter(model.Resource.url==entry.key).first()
-            if not r:
-                continue
-            data[r] += int(entry.value)
-
-        c.downloads = [(k,v,) for k,v in data.iteritems()]
-        c.downloads = sorted(c.downloads, key=operator.itemgetter(1), reverse=True)
-
-        return render('ga_report/site/downloads.html')
-
 
 class GaDatasetReport(BaseController):
     """
@@ -275,13 +229,14 @@ class GaDatasetReport(BaseController):
             str('attachment; filename=datasets_%s_%s.csv' % (c.publisher_name, month,))
 
         writer = csv.writer(response)
-        writer.writerow(["Dataset Title", "Dataset Name", "Views", "Visits", "Period Name"])
+        writer.writerow(["Dataset Title", "Dataset Name", "Views", "Visits", "Resource downloads", "Period Name"])
 
-        for package,view,visit in packages:
+        for package,view,visit,downloads in packages:
             writer.writerow([package.title.encode('utf-8'),
                              package.name.encode('utf-8'),
                              view,
                              visit,
+                             downloads,
                              month])
 
     def publishers(self):
@@ -302,10 +257,10 @@ class GaDatasetReport(BaseController):
 
     def _get_packages(self, publisher=None, count=-1):
         '''Returns the datasets in order of views'''
-        if count == -1:
-            count = sys.maxint
-
+        have_download_data = True
         month = c.month or 'All'
+        if month != 'All':
+            have_download_data = month >= DOWNLOADS_AVAILABLE_FROM
 
         q = model.Session.query(GA_Url,model.Package)\
             .filter(model.Package.name==GA_Url.package_id)\
@@ -315,9 +270,25 @@ class GaDatasetReport(BaseController):
         q = q.filter(GA_Url.period_name==month)
         q = q.order_by('ga_url.pageviews::int desc')
         top_packages = []
-        for entry,package in q.limit(count):
+        if count == -1:
+            entries = q.all()
+        else:
+            entries = q.limit(count)
+
+        for entry,package in entries:
             if package:
-                top_packages.append((package, entry.pageviews, entry.visits))
+                # Downloads ....
+                if have_download_data:
+                    dls = model.Session.query(GA_Stat).\
+                        filter(GA_Stat.stat_name=='Downloads').\
+                        filter(GA_Stat.key==package.name)
+                    if month != 'All':  # Fetch everything unless the month is specific
+                        dls = dls.filter(GA_Stat.period_name==month)
+
+                    downloads = sum(int(d.value) for d in dls.all())
+                else:
+                    downloads = 'No data'
+                top_packages.append((package, entry.pageviews, entry.visits, downloads))
             else:
                 log.warning('Could not find package associated package')
 

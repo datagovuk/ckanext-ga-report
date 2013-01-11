@@ -56,6 +56,36 @@ class GetAuthToken(CkanCommand):
                       self.args[0] if self.args
                                    else 'credentials.json')
 
+class FixTimePeriods(CkanCommand):
+    """
+    Fixes the 'All' records for GA_Urls
+
+    It is possible that older urls that haven't recently been visited
+    do not have All records.  This command will traverse through those
+    records and generate valid All records for them.
+    """
+    summary = __doc__.split('\n')[0]
+    usage = __doc__
+    max_args = 0
+    min_args = 0
+
+    def __init__(self, name):
+        super(FixTimePeriods, self).__init__(name)
+
+    def command(self):
+        import ckan.model as model
+        from ga_model import post_update_url_stats
+        self._load_config()
+        model.Session.remove()
+        model.Session.configure(bind=model.meta.engine)
+
+        log = logging.getLogger('ckanext.ga_report')
+
+        log.info("Updating 'All' records for old URLs")
+        post_update_url_stats()
+        log.info("Processing complete")
+
+
 
 class LoadAnalytics(CkanCommand):
     """Get data from Google Analytics API and save it

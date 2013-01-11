@@ -123,8 +123,12 @@ class DownloadAnalytics(object):
                 log.info('Storing publisher views (%i rows)', len(data.get('url')))
                 self.store(period_name, period_complete_day, data,)
 
+                # Make sure the All records are correct.
+                ga_model.post_update_url_stats()
+
                 log.info('Aggregating datasets by publisher')
                 ga_model.update_publisher_stats(period_name) # about 30 seconds.
+
 
             log.info('Downloading and storing analytics for site-wide stats')
             self.sitewide_stats( period_name, period_complete_day )
@@ -180,6 +184,7 @@ class DownloadAnalytics(object):
                                  end_date=end_date).execute()
 
         packages = []
+        log.info("There are %d results" % results['totalResults'])
         for entry in results.get('rows'):
             (loc,pageviews,visits) = entry
             url = _normalize_url('http:/' + loc) # strips off domain e.g. www.data.gov.uk or data.gov.uk
@@ -294,6 +299,10 @@ class DownloadAnalytics(object):
 
     def _download_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Fetches stats about language and country """
+        import ckan.model as model
+
+        data = {}
+
         results = self.service.data().ga().get(
                                  ids='ga:' + self.profile_id,
                                  start_date=start_date,
@@ -310,10 +319,37 @@ class DownloadAnalytics(object):
             log.info("There is no download data for this time period")
             return
 
-        # [[url, count], [url],count]
-        data = {}
-        for result in result_data:
-            data[result[0]] = data.get(result[0], 0) + int(result[1])
+        def process_result_data(result_data, cached=False):
+            for result in result_data:
+                url = result[0].strip()
+
+                # Get package id associated with the resource that has this URL.
+                q = model.Session.query(model.Resource)
+                if cached:
+                    r = q.filter(model.Resource.cache_url.like("%s%%" % url)).first()
+                else:
+                    r = q.filter(model.Resource.url.like("%s%%" % url)).first()
+
+                package_name = r.resource_group.package.name if r else ""
+                if package_name:
+                    data[package_name] = data.get(package_name, 0) + int(result[1])
+                else:
+                    log.warning(u"Could not find resource for URL: {url}".format(url=url))
+                    continue
+
+        process_result_data(results.get('rows'))
+
+        results = self.service.data().ga().get(
+                                 ids='ga:' + self.profile_id,
+                                 start_date=start_date,
+                                 filters='ga:eventAction==download-cache',
+                                 metrics='ga:totalEvents',
+                                 sort='-ga:totalEvents',
+                                 dimensions="ga:eventLabel",
+                                 max_results=10000,
+                                 end_date=end_date).execute()
+        process_result_data(results.get('rows'), cached=False)
+
         self._filter_out_long_tail(data, MIN_DOWNLOADS)
         ga_model.update_sitewide_stats(period_name, "Downloads", data, period_complete_day)
 

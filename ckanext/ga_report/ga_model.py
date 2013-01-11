@@ -176,6 +176,42 @@ def pre_update_url_stats(period_name):
     model.Session.commit()
     model.repo.commit_and_remove()
 
+def post_update_url_stats():
+
+    """ Check the distinct url field in ga_url and make sure
+        it has an All record.  If not then create one.
+
+        After running this then every URL should have an All
+        record regardless of whether the URL has an entry for
+        the month being currently processed.
+    """
+    query = """select url, pageviews::int, visits::int
+               from ga_url
+               where url not in (select url from ga_url where period_name ='All')"""
+    connection = model.Session.connection()
+    res = connection.execute(query)
+
+    views, visits = {}, {}
+    # url, views, visits
+    for row in res:
+        views[row[0]] = views.get(row[0], 0) + row[1]
+        visits[row[0]] = visits.get(row[0], 0) + row[2]
+
+    for key in views.keys():
+        package, publisher = _get_package_and_publisher(key)
+
+        values = {'id': make_uuid(),
+                  'period_name': "All",
+                  'period_complete_day': 0,
+                  'url': key,
+                  'pageviews': views[key],
+                  'visits': visits[key],
+                  'department_id': publisher,
+                  'package_id': publisher
+                  }
+        model.Session.add(GA_Url(**values))
+    model.Session.commit()
+
 
 def update_url_stats(period_name, period_complete_day, url_data):
     '''
