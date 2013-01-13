@@ -8,12 +8,43 @@
   <py:def function="page_title">Site usage</py:def>
 
   <py:def function="optional_head">
+    <link rel="stylesheet" type="text/css" href="/scripts/vendor/rickshaw.min.css"/>
     <script type="text/javascript" src="/scripts/vendor/jquery.sparkline.modified.js"></script>
+    <script type="text/javascript" src="/scripts/vendor/d3.v2.js"></script>
+    <script type="text/javascript" src="/scripts/vendor/d3.layout.min.js"></script>
+    <script type="text/javascript" src="/scripts/vendor/rickshaw.min.js"></script>
     <style type="text/css">
       .table-condensed td.sparkline-cell {
         padding: 1px 0 0 0;
         width: 108px;
         text-align: center;
+      }
+      .chart_container {
+        position: relative;
+        height: 300px;
+        margin: 0 auto 20px auto;
+      }
+      .chart {
+        position: absolute;
+        left: 40px;
+        width: 500px;
+        top: 0;
+        bottom: 0;
+      }
+      .legend {
+        position: absolute;
+        right: 0;
+        top: 0;
+        margin-left: 15px;
+        background: transparent;
+        max-width: 150px;
+        overflow: hidden;
+      }
+      .y_axis {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 40px;
       }
     </style>
   </py:def>
@@ -96,16 +127,20 @@
                </table>
         </div>
          <div class="tab-pane" id="browsers_versions">
+             ${rickshaw_graph(c.browser_versions_graph,'browser-versions')}
              <p>Note: Where a browser has a large number of versions, these have been grouped together.</p>
              ${stat_table(c.browser_versions)}
          </div>
          <div class="tab-pane" id="browsers_names">
+             ${rickshaw_graph(c.browsers_graph,'browsers')}
              ${stat_table(c.browsers)}
          </div>
          <div class="tab-pane" id="os">
+             ${rickshaw_graph(c.os_graph,'os')}
              ${stat_table(c.os)}
          </div>
          <div class="tab-pane" id="os_versions">
+             ${rickshaw_graph(c.os_versions_graph,'os_versions')}
              ${stat_table(c.os_versions)}
          </div>
         <div class="tab-pane" id="social_referrals_totals">
@@ -113,14 +148,16 @@
             ${social_table(c.social_referrer_totals)}
         </div>
         <div class="tab-pane" id="social_networks">
+             ${rickshaw_graph(c.social_networks_graph, 'social_networks')}
             <p>Percentage of visits that were referred from these social networks</p>
-
              ${stat_table(c.social_networks, 'Visits')}
         </div>
         <div class="tab-pane" id="languages">
+             ${rickshaw_graph(c.languages_graph,'languages')}
              ${stat_table(c.languages)}
         </div>
         <div class="tab-pane" id="country">
+             ${rickshaw_graph(c.country_graph,'country')}
              ${stat_table(c.country)}
         </div>
 
@@ -150,7 +187,7 @@
             fillColor: 'B7E66B'
           };
           $('.sparkline').sparkline('html',sparkOptions);
-      });
+      });  
     </script>
   </py:def>
 

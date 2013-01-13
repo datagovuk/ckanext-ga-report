@@ -1,6 +1,7 @@
 import re
 import csv
 import sys
+import json
 import logging
 import operator
 import collections
@@ -21,6 +22,10 @@ def _get_month_name(strdate):
     d = strptime(strdate, '%Y-%m')
     return '%s %s' % (calendar.month_name[d.tm_mon], d.tm_year)
 
+def _get_unix_epoch(strdate):
+    from time import strptime,mktime
+    d = strptime(strdate, '%Y-%m')
+    return int(mktime(d))
 
 def _month_details(cls, stat_key=None):
     '''
@@ -177,7 +182,29 @@ class GaReport(BaseController):
 
         for k, v in keys.iteritems():
             q = model.Session.query(GA_Stat).\
-                filter(GA_Stat.stat_name==k)
+                filter(GA_Stat.stat_name==k).\
+                order_by(GA_Stat.period_name)
+            # Run the query on all months to gather graph data
+            series = {}
+            x_axis = set()
+            for stat in q:
+                x_val = _get_unix_epoch(stat.period_name)
+                series[ stat.key ] = series.get(stat.key,{})
+                series[ stat.key ][x_val] = float(stat.value)
+                x_axis.add(x_val)
+            # Common x-axis for all series. Exclude this month (incomplete data)
+            x_axis = sorted(list(x_axis))[:-1]
+            # Buffer a rickshaw dataset from the series
+            def create_graph(series_name, series_data):
+                return { 
+                    'name':series_name, 
+                    'data':[ {'x':x,'y':series_data.get(x,0)} for x in x_axis ]
+                    }
+            rickshaw = [ create_graph(name,data) for name, data in series.items() ]
+            rickshaw = sorted(rickshaw,key=lambda x:x['data'][-1]['y'])
+            setattr(c, v+'_graph', json.dumps(rickshaw))
+
+            # Buffer the tabular data
             if c.month:
                 entries = []
                 q = q.filter(GA_Stat.period_name==c.month).\
