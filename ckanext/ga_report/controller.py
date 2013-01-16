@@ -273,7 +273,7 @@ class GaDatasetReport(BaseController):
             if not c.publisher:
                 abort(404, 'A publisher with that name could not be found')
 
-        packages = self._get_packages(c.publisher)
+        packages, graph_data = self._get_packages(c.publisher)
         response.headers['Content-Type'] = "text/csv; charset=utf-8"
         response.headers['Content-Disposition'] = \
             str('attachment; filename=datasets_%s_%s.csv' % (c.publisher_name, month,))
@@ -319,6 +319,7 @@ class GaDatasetReport(BaseController):
             q = q.filter(GA_Url.department_id==publisher.name)
         q = q.filter(GA_Url.period_name==month)
         q = q.order_by('ga_url.pageviews::int desc')
+        graph_data = []
         top_packages = []
         if count == -1:
             entries = q.all()
@@ -327,6 +328,7 @@ class GaDatasetReport(BaseController):
 
         for entry,package in entries:
             if package:
+                graph = []
                 # Downloads ....
                 if have_download_data:
                     dls = model.Session.query(GA_Stat).\
@@ -334,15 +336,18 @@ class GaDatasetReport(BaseController):
                         filter(GA_Stat.key==package.name)
                     if month != 'All':  # Fetch everything unless the month is specific
                         dls = dls.filter(GA_Stat.period_name==month)
-
-                    downloads = sum(int(d.value) for d in dls.all())
+                    downloads = 0
+                    for x in dls:
+                        graph.append({ 'x': _get_unix_epoch(d.period_name), 'y': int(d.value)})
+                        downloads += int(d.value)
                 else:
                     downloads = 'No data'
-                top_packages.append((package, entry.pageviews, entry.visits, downloads))
+                top_packages.append((package, entry.pageviews, entry.visits, downloads, graph_data))
+                graph_data.append({'name':package.title, 'data':graph})
             else:
                 log.warning('Could not find package associated package')
 
-        return top_packages
+        return top_packages,graph_data
 
     def read(self):
         '''
@@ -384,7 +389,8 @@ class GaDatasetReport(BaseController):
         entry = q.filter(GA_Url.period_name==c.month).first()
         c.publisher_page_views = entry.pageviews if entry else 0
 
-        c.top_packages = self._get_packages(c.publisher, 20)
+        c.top_packages, graph_data = self._get_packages(c.publisher, 20)
+        c.graph_data = json.dumps(graph_data)
 
         return render('ga_report/publisher/read.html')
 

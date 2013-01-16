@@ -52,7 +52,7 @@
      <p py:if="not c.top_packages">No page views in this period</p>
 
      <py:if test="c.top_packages">
-       ${rickshaw_graph('[{name:"test series",data:[{x:1,y:200},{x:3,y:300},{x:5,y:100}]}]','dataset-downloads',debug=True)}
+       ${rickshaw_graph(c.graph_data,'dataset-downloads',debug=True)}
        <table class="table table-condensed table-bordered table-striped">
          <tr>
            <th>Dataset</th>
