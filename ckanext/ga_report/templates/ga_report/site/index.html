@@ -9,44 +9,11 @@
 
   <py:def function="optional_head">
     <link rel="stylesheet" type="text/css" href="/scripts/vendor/rickshaw.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/ga_report.css"/>
     <script type="text/javascript" src="/scripts/vendor/jquery.sparkline.modified.js"></script>
     <script type="text/javascript" src="/scripts/vendor/d3.v2.js"></script>
     <script type="text/javascript" src="/scripts/vendor/d3.layout.min.js"></script>
     <script type="text/javascript" src="/scripts/vendor/rickshaw.min.js"></script>
-    <style type="text/css">
-      .table-condensed td.sparkline-cell {
-        padding: 1px 0 0 0;
-        width: 108px;
-        text-align: center;
-      }
-      .chart_container {
-        position: relative;
-        height: 300px;
-        margin: 0 auto 20px auto;
-      }
-      .chart {
-        position: absolute;
-        left: 40px;
-        width: 500px;
-        top: 0;
-        bottom: 0;
-      }
-      .legend {
-        position: absolute;
-        right: 0;
-        top: 0;
-        margin-left: 15px;
-        background: transparent;
-        max-width: 150px;
-        overflow: hidden;
-      }
-      .y_axis {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 40px;
-      }
-    </style>
   </py:def>
 
   <py:match path="primarysidebar">
@@ -160,13 +127,8 @@
              ${rickshaw_graph(c.country_graph,'country')}
              ${stat_table(c.country)}
         </div>
-
-
        </div>
      </div>
-
-
-
   </div>
 
 

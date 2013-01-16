@@ -17,6 +17,14 @@
     <xi:include href="../notes.html" />
   </py:match>
 
+  <py:def function="optional_head">
+    <link rel="stylesheet" type="text/css" href="/scripts/vendor/rickshaw.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/ga_report.css"/>
+    <script type="text/javascript" src="/scripts/vendor/jquery.sparkline.modified.js"></script>
+    <script type="text/javascript" src="/scripts/vendor/d3.v2.js"></script>
+    <script type="text/javascript" src="/scripts/vendor/d3.layout.min.js"></script>
+    <script type="text/javascript" src="/scripts/vendor/rickshaw.min.js"></script>
+  </py:def>
 
   <div py:match="content">
 
@@ -34,6 +42,7 @@
           </div>
        </form>
 
+       ${rickshaw_graph('[{name:"test series",data:[{x:1,y:200},{x:3,y:300},{x:5,y:100}]}]','dataset-downloads',debug=True)}
        <table class="table table-condensed table-bordered table-striped">
 	 <tr>
 	   <th>Publisher</th>

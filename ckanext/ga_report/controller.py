@@ -113,24 +113,24 @@ class GaReport(BaseController):
             return key, val
 
         # Query historic values for sparkline rendering
-        graph_query = model.Session.query(GA_Stat)\
+        sparkline_query = model.Session.query(GA_Stat)\
                 .filter(GA_Stat.stat_name=='Totals')\
                 .order_by(GA_Stat.period_name)
-        graph_data = {}
-        for x in graph_query:
-            graph_data[x.key] = graph_data.get(x.key,[])
+        sparkline_data = {}
+        for x in sparkline_query:
+            sparkline_data[x.key] = sparkline_data.get(x.key,[])
             key, val = clean_key(x.key,float(x.value))
             tooltip = '%s: %s' % (_get_month_name(x.period_name), val)
-            graph_data[x.key].append( (tooltip,x.value) )
+            sparkline_data[x.key].append( (tooltip,x.value) )
         # Trim the latest month, as it looks like a huge dropoff
-        for key in graph_data:
-            graph_data[key] = graph_data[key][:-1]
+        for key in sparkline_data:
+            sparkline_data[key] = sparkline_data[key][:-1]
 
         c.global_totals = []
         if c.month:
             for e in entries:
                 key, val = clean_key(e.key, e.value)
-                sparkline = graph_data[e.key]
+                sparkline = sparkline_data[e.key]
                 c.global_totals.append((key, val, sparkline))
         else:
             d = collections.defaultdict(list)
@@ -141,11 +141,18 @@ class GaReport(BaseController):
                     v = sum(v)
                 else:
                     v = float(sum(v))/float(len(v))
-                sparkline = graph_data[k]
+                sparkline = sparkline_data[k]
                 key, val = clean_key(k,v)
 
                 c.global_totals.append((key, val, sparkline))
-                c.global_totals = sorted(c.global_totals, key=operator.itemgetter(0))
+        # Sort the global totals into a more pleasant order
+        def sort_func(x):
+            key = x[0]
+            total_order = ['Total page views','Total visits','Pages per visit']
+            if key in total_order:
+                return total_order.index(key)
+            return 999
+        c.global_totals = sorted(c.global_totals, key=sort_func)
 
         keys = {
             'Browser versions': 'browser_versions',

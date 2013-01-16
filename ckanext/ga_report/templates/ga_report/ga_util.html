@@ -30,14 +30,15 @@
  </table>
 
 
-<div py:def="rickshaw_graph(items_json,id)">
-  <div id="chart_container_$id" class="chart_container">
-    <div id="y_axis_$id" class="y_axis"></div>
-    <div id="chart_$id" class="chart"></div>
-    <div id="legend_$id" class="legend"></div>
+<div py:def="rickshaw_graph(items_json,id,debug=False)">
+  <div id="chart_container_$id" class="rickshaw_chart_container">
+    <div id="y_axis_$id" class="rickshaw_y_axis"></div>
+    <div id="chart_$id" class="rickshaw_chart"></div>
+    <div id="legend_$id" class="rickshaw_legend"></div>
     <script type="text/javascript">
       $(function() {
           var series = ${items_json};
+          <py:if test="debug">console.log(series);</py:if>
           var palette = new Rickshaw.Color.Palette( { scheme: 'spectrum2001' } );
           $.each(series, function(i, object) {
               object['color'] = palette.color();

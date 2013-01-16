@@ -1,0 +1,32 @@
+.table-condensed td.sparkline-cell {
+  padding: 1px 0 0 0;
+  width: 108px;
+  text-align: center;
+}
+.rickshaw_chart_container {
+  position: relative;
+  height: 300px;
+  margin: 0 auto 20px auto;
+}
+.rickshaw_chart {
+  position: absolute;
+  left: 40px;
+  width: 500px;
+  top: 0;
+  bottom: 0;
+}
+.rickshaw_legend {
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin-left: 15px;
+  background: transparent;
+  max-width: 150px;
+  overflow: hidden;
+}
+.rickshaw_y_axis {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+}
