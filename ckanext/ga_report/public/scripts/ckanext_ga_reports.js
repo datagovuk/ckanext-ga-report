@@ -16,7 +16,6 @@ CKAN.GA_Reports.render_rickshaw = function( css_name, data, mode, colorscheme ) 
         series: data ,
         height: 328
     });
-    graph.render();
     var x_axis = new Rickshaw.Graph.Axis.Time( { graph: graph } );
     var y_axis = new Rickshaw.Graph.Axis.Y( {
         graph: graph,
@@ -37,5 +36,6 @@ CKAN.GA_Reports.render_rickshaw = function( css_name, data, mode, colorscheme ) 
         return content;
       }
     } );
+    graph.render();
 };
 
