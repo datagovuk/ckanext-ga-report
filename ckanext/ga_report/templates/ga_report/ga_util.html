@@ -37,29 +37,7 @@
     <div id="legend_$id" class="rickshaw_legend"></div>
     <script type="text/javascript">
       $(function() {
-          var all_series = ${items_json};
-          var palette = new Rickshaw.Color.Palette( { scheme: '$colorscheme' } );
-          $.each(all_series, function(i, object) {
-              object['color'] = palette.color();
-          });
-          var graph = new Rickshaw.Graph( {
-              element: document.querySelector("#chart_$id"),
-              renderer: '$mode',
-              series: all_series ,
-              height: 328
-          });
-          var x_axis = new Rickshaw.Graph.Axis.Time( { graph: graph } );
-          var y_axis = new Rickshaw.Graph.Axis.Y( {
-              graph: graph,
-              orientation: 'left',
-              tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-              element: document.getElementById('y_axis_$id'),
-          } );
-          var legend = new Rickshaw.Graph.Legend( {
-              element: document.querySelector('#legend_$id'),
-              graph: graph
-          } );
-          graph.render();
+          CKAN.GA_Reports.render_rickshaw('$id', $items_json, '$mode', '$colorscheme');
       });
     </script>
   </div>
