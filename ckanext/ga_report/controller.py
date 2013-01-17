@@ -448,6 +448,8 @@ def _to_rickshaw(data, percentageMode=False):
     # Sort the points
     for package in data:
         package['data'] = sorted( package['data'], key=lambda x:x['x'] )
+        # Strip the latest month's incomplete analytics
+        package['data'] = package['data'][:-1]
     return data
 
 
