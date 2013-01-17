@@ -192,24 +192,17 @@ class GaReport(BaseController):
                 filter(GA_Stat.stat_name==k).\
                 order_by(GA_Stat.period_name)
             # Run the query on all months to gather graph data
-            series = {}
-            x_axis = set()
+            graph = {}
             for stat in q:
-                x_val = _get_unix_epoch(stat.period_name)
-                series[ stat.key ] = series.get(stat.key,{})
-                series[ stat.key ][x_val] = float(stat.value)
-                x_axis.add(x_val)
-            # Common x-axis for all series. Exclude this month (incomplete data)
-            x_axis = sorted(list(x_axis))[:-1]
-            # Buffer a rickshaw dataset from the series
-            def create_graph(series_name, series_data):
-                return { 
-                    'name':series_name, 
-                    'data':[ {'x':x,'y':series_data.get(x,0)} for x in x_axis ]
-                    }
-            rickshaw = [ create_graph(name,data) for name, data in series.items() ]
-            rickshaw = sorted(rickshaw,key=lambda x:x['data'][-1]['y'])
-            setattr(c, v+'_graph', json.dumps(rickshaw))
+                graph[ stat.key ] = graph.get(stat.key,{
+                    'name':stat.key, 
+                    'data': []
+                    })
+                graph[ stat.key ]['data'].append({
+                    'x':_get_unix_epoch(stat.period_name),
+                    'y':float(stat.value)
+                    })
+            setattr(c, v+'_graph', json.dumps( _to_rickshaw(graph.values(),percentageMode=True) ))
 
             # Buffer the tabular data
             if c.month:
@@ -409,22 +402,54 @@ class GaDatasetReport(BaseController):
                 'x':_get_unix_epoch(entry.period_name),
                 'y':int(entry.pageviews),
                 })
-
+                    
         c.graph_data = json.dumps( _to_rickshaw(graph_data.values()) )
 
         return render('ga_report/publisher/read.html')
 
-def _to_rickshaw(data):
-    num_points = []    
+def _to_rickshaw(data, percentageMode=False):
+    if data==[]:
+        return data
+    # Create a consistent x-axis
+    num_points = [ len(package['data']) for package in data ]
+    ideal_index = num_points.index( max(num_points) )
+    x_axis = [ point['x'] for point in data[ideal_index]['data'] ]
+    for package in data:
+        xs = [ point['x'] for point in package['data'] ]
+        assert set(xs).issubset( set(x_axis) ), (xs, x_axis)
+        # Zero pad any missing values
+        for x in set(x_axis).difference(set(xs)):
+            package['data'].append( {'x':x, 'y':0} )
+        assert len(package['data'])==len(x_axis), (len(package['data']),len(x_axis),package['data'],x_axis,set(x_axis).difference(set(xs)))
+    if percentageMode:
+        # Transform data into percentage stacks
+        totals = {}
+        for x in x_axis:
+            for package in data:
+                for point in package['data']:
+                    totals[ point['x'] ] = totals.get(point['x'],0) + point['y']
+        # Roll insignificant series into a catch-all
+        THRESHOLD = 0.01
+        significant_series = []
+        for package in data:
+            for point in package['data']:
+                fraction = float(point['y']) / totals[point['x']]
+                if fraction>THRESHOLD and not (package in significant_series):
+                    significant_series.append(package)
+        temp = {}
+        for package in data:
+            if package in significant_series: continue
+            for point in package['data']:
+                temp[point['x']] = temp.get(point['x'],0) + point['y']
+        catch_all = { 'name':'Other','data': [ {'x':x,'y':y} for x,y in temp.items() ] }
+        # Roll insignificant series into one
+        data = significant_series
+        data.append(catch_all)
+    # Sort the points
     for package in data:
         package['data'] = sorted( package['data'], key=lambda x:x['x'] )
-        num_points.append( len(package['data']) )
-    if len(set(num_points))>1:
-        example = num_points[ num_points.index(max(num_points)) ]
-        for package in data:
-            while len(package['data'])<example:
-                package['data'].insert(0, package['data'][0])
     return data
+
 
 def _get_top_publishers(limit=20):
     '''

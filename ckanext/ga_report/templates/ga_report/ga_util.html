@@ -30,7 +30,7 @@
  </table>
 
 
-<div py:def="rickshaw_graph(items_json,id)">
+<div py:def="rickshaw_graph(items_json,id,mode='line')">
   <div id="chart_container_$id" class="rickshaw_chart_container">
     <div id="y_axis_$id" class="rickshaw_y_axis"></div>
     <div id="chart_$id" class="rickshaw_chart"></div>
@@ -44,7 +44,7 @@
           });
           var graph = new Rickshaw.Graph( {
               element: document.querySelector("#chart_$id"),
-              renderer: 'line',
+              renderer: '$mode',
               series: all_series ,
               height: 328
           });
