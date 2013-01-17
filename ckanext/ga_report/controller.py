@@ -253,7 +253,9 @@ class GaDatasetReport(BaseController):
         writer = csv.writer(response)
         writer.writerow(["Publisher Title", "Publisher Name", "Views", "Visits", "Period Name"])
 
-        for publisher,view,visit in _get_top_publishers(None):
+        top_publishers, top_publishers_graph = _get_top_publishers(None)
+
+        for publisher,view,visit in top_publishers:
             writer.writerow([publisher.title.encode('utf-8'),
                              publisher.name.encode('utf-8'),
                              view,
@@ -302,7 +304,9 @@ class GaDatasetReport(BaseController):
         if c.month:
             c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
-        c.top_publishers = _get_top_publishers()
+        c.top_publishers, graph_data = _get_top_publishers()
+        c.top_publishers_graph = json.dumps( _to_rickshaw(graph_data.values()) )
+
         return render('ga_report/publisher/index.html')
 
     def _get_packages(self, publisher=None, count=-1):
@@ -405,9 +409,22 @@ class GaDatasetReport(BaseController):
                 'x':_get_unix_epoch(entry.period_name),
                 'y':int(entry.pageviews),
                 })
-        c.graph_data = json.dumps(graph_data.values())
+
+        c.graph_data = json.dumps( _to_rickshaw(graph_data.values()) )
 
         return render('ga_report/publisher/read.html')
+
+def _to_rickshaw(data):
+    num_points = []    
+    for package in data:
+        package['data'] = sorted( package['data'], key=lambda x:x['x'] )
+        num_points.append( len(package['data']) )
+    if len(set(num_points))>1:
+        example = num_points[ num_points.index(max(num_points)) ]
+        for package in data:
+            while len(package['data'])<example:
+                package['data'].insert(0, package['data'][0])
+    return data
 
 def _get_top_publishers(limit=20):
     '''
@@ -430,11 +447,35 @@ def _get_top_publishers(limit=20):
 
     top_publishers = []
     res = connection.execute(q, month)
+    department_ids = []
     for row in res:
         g = model.Group.get(row[0])
         if g:
+            department_ids.append(row[0])
             top_publishers.append((g, row[1], row[2]))
-    return top_publishers
+
+    graph = {}
+    if limit is not None:
+        # Query for a history graph of these publishers
+        q = model.Session.query(
+                GA_Url.department_id, 
+                GA_Url.period_name, 
+                func.sum(cast(GA_Url.pageviews,sqlalchemy.types.INT)))\
+            .filter( GA_Url.department_id.in_(department_ids) )\
+            .filter( GA_Url.period_name!='All' )\
+            .filter( GA_Url.url.like('/dataset/%') )\
+            .filter( GA_Url.package_id!='' )\
+            .group_by( GA_Url.department_id, GA_Url.period_name )
+        for dept_id,period_name,views in q:
+            graph[dept_id] = graph.get( dept_id, {
+                'name' : model.Group.get(dept_id).title,
+                'data' : []
+                })
+            graph[dept_id]['data'].append({
+                'x': _get_unix_epoch(period_name),
+                'y': views
+                })
+    return top_publishers, graph
 
 
 def _get_publishers():

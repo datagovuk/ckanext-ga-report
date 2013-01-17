@@ -5,7 +5,7 @@
 }
 .rickshaw_chart_container {
   position: relative;
-  height: 300px;
+  height: 350px;
   margin: 0 auto 20px auto;
 }
 .rickshaw_chart {
@@ -20,13 +20,21 @@
   right: 0;
   top: 0;
   margin-left: 15px;
+  padding: 0 5px;
   background: transparent;
   max-width: 150px;
   overflow: hidden;
+  background: rgba(0,0,0,0.05);
+  border-radius:5px;
 }
 .rickshaw_y_axis {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 40px;
+}
+.rickshaw_legend .label {
+  background: transparent !important;
+  color: #000000 !important;
+  font-weight: normal !important;
 }

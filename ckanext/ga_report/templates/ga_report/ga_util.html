@@ -37,16 +37,16 @@
     <div id="legend_$id" class="rickshaw_legend"></div>
     <script type="text/javascript">
       $(function() {
-          var series = ${items_json};
-          Rickshaw.Series.zeroFill(series);
-          var palette = new Rickshaw.Color.Palette( { scheme: 'spectrum2001' } );
-          $.each(series, function(i, object) {
+          var all_series = ${items_json};
+          var palette = new Rickshaw.Color.Palette( { scheme: 'munin' } );
+          $.each(all_series, function(i, object) {
               object['color'] = palette.color();
           });
           var graph = new Rickshaw.Graph( {
               element: document.querySelector("#chart_$id"),
               renderer: 'line',
-              series: series 
+              series: all_series ,
+              height: 328
           });
           var x_axis = new Rickshaw.Graph.Axis.Time( { graph: graph } );
           var y_axis = new Rickshaw.Graph.Axis.Y( {
