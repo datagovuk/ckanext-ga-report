@@ -445,6 +445,10 @@ def _to_rickshaw(data, percentageMode=False):
         # Roll insignificant series into one
         data = significant_series
         data.append(catch_all)
+        # Turn each point into a percentage
+        for package in data:
+            for point in package['data']:
+                point['y'] = (point['y']*100) / totals[point['x']]
     # Sort the points
     for package in data:
         package['data'] = sorted( package['data'], key=lambda x:x['x'] )
