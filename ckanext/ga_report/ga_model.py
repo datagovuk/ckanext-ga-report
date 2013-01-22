@@ -161,20 +161,20 @@ def update_sitewide_stats(period_name, stat_name, data, period_complete_day):
 
 
 def pre_update_url_stats(period_name):
-    log.debug("Deleting '%s' records" % period_name)
-    model.Session.query(GA_Url).\
-            filter(GA_Url.period_name==period_name).delete()
+    q = model.Session.query(GA_Url).\
+        filter(GA_Url.period_name==period_name)
+    log.debug("Deleting %d '%s' records" % (q.count(), period_name))
+    q.delete()
 
-    count = model.Session.query(GA_Url).\
-            filter(GA_Url.period_name == 'All').count()
-    log.debug("Deleting %d 'All' records" % count)
-    count = model.Session.query(GA_Url).\
-            filter(GA_Url.period_name == 'All').delete()
-    log.debug("Deleted %d 'All' records" % count)
+    q = model.Session.query(GA_Url).\
+        filter(GA_Url.period_name == 'All')
+    log.debug("Deleting %d 'All' records..." % q.count())
+    q.delete()
 
     model.Session.flush()
     model.Session.commit()
     model.repo.commit_and_remove()
+    log.debug('...done')
 
 def post_update_url_stats():
 
@@ -185,6 +185,7 @@ def post_update_url_stats():
         record regardless of whether the URL has an entry for
         the month being currently processed.
     """
+    log.debug('Post-processing "All" records...')
     query = """select url, pageviews::int, visits::int
                from ga_url
                where url not in (select url from ga_url where period_name ='All')"""
@@ -197,7 +198,13 @@ def post_update_url_stats():
         views[row[0]] = views.get(row[0], 0) + row[1]
         visits[row[0]] = visits.get(row[0], 0) + row[2]
 
+    progress_total = len(views.keys())
+    progress_count = 0
     for key in views.keys():
+        progress_count += 1
+        if progress_count % 100 == 0:
+            log.debug('.. %d/%d done so far', progress_count, progress_total)
+
         package, publisher = _get_package_and_publisher(key)
 
         values = {'id': make_uuid(),
@@ -211,6 +218,7 @@ def post_update_url_stats():
                   }
         model.Session.add(GA_Url(**values))
     model.Session.commit()
+    log.debug('..done')
 
 
 def update_url_stats(period_name, period_complete_day, url_data):
@@ -219,9 +227,14 @@ def update_url_stats(period_name, period_complete_day, url_data):
     stores them in GA_Url under the period and recalculates the totals for
     the 'All' period.
     '''
+    progress_total = len(progress_data)
+    progress_count = 0
     for url, views, visits in url_data:
-        package, publisher = _get_package_and_publisher(url)
+        progress_count += 1
+        if progress_count % 100 == 0:
+            log.debug('.. %d/%d done so far', progress_count, progress_total)
 
+        package, publisher = _get_package_and_publisher(url)
 
         item = model.Session.query(GA_Url).\
             filter(GA_Url.period_name==period_name).\
