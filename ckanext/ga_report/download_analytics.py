@@ -32,6 +32,11 @@ class DownloadAnalytics(object):
         first_of_this_month = datetime.datetime(date.year, date.month, 1)
         _, last_day_of_month = calendar.monthrange(int(date.year), int(date.month))
         last_of_this_month =  datetime.datetime(date.year, date.month, last_day_of_month)
+        # if this is the latest month, note that it is only up until today
+        now = datetime.datetime.now()
+        if now.year == date.year and now.month == date.month:
+            last_day_of_month = now.day
+            last_of_this_month = now
         periods = ((date.strftime(FORMAT_MONTH),
                     last_day_of_month,
                     first_of_this_month, last_of_this_month),)
