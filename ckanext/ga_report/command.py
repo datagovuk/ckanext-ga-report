@@ -23,7 +23,7 @@ class InitDB(CkanCommand):
         import ckan.model as model
         model.Session.remove()
         model.Session.configure(bind=model.meta.engine)
-        log = logging.getLogger('ckanext.ga-report')
+        log = logging.getLogger('ckanext.ga_report')
 
         import ga_model
         ga_model.init_tables()

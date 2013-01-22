@@ -32,6 +32,11 @@ class DownloadAnalytics(object):
         first_of_this_month = datetime.datetime(date.year, date.month, 1)
         _, last_day_of_month = calendar.monthrange(int(date.year), int(date.month))
         last_of_this_month =  datetime.datetime(date.year, date.month, last_day_of_month)
+        # if this is the latest month, note that it is only up until today
+        now = datetime.datetime.now()
+        if now.year == date.year and now.month == date.month:
+            last_day_of_month = now.day
+            last_of_this_month = now
         periods = ((date.strftime(FORMAT_MONTH),
                     last_day_of_month,
                     first_of_this_month, last_of_this_month),)
@@ -126,7 +131,7 @@ class DownloadAnalytics(object):
                 # Make sure the All records are correct.
                 ga_model.post_update_url_stats()
 
-                log.info('Aggregating datasets by publisher')
+                log.info('Associating datasets with their publisher')
                 ga_model.update_publisher_stats(period_name) # about 30 seconds.
 
 
@@ -298,7 +303,7 @@ class DownloadAnalytics(object):
 
 
     def _download_stats(self, start_date, end_date, period_name, period_complete_day):
-        """ Fetches stats about language and country """
+        """ Fetches stats about data downloads """
         import ckan.model as model
 
         data = {}
@@ -320,7 +325,14 @@ class DownloadAnalytics(object):
             return
 
         def process_result_data(result_data, cached=False):
+            progress_total = len(result_data)
+            progress_count = 0
+            resources_not_matched = []
             for result in result_data:
+                progress_count += 1
+                if progress_count % 100 == 0:
+                    log.debug('.. %d/%d done so far', progress_count, progress_total)
+
                 url = result[0].strip()
 
                 # Get package id associated with the resource that has this URL.
@@ -334,9 +346,13 @@ class DownloadAnalytics(object):
                 if package_name:
                     data[package_name] = data.get(package_name, 0) + int(result[1])
                 else:
-                    log.warning(u"Could not find resource for URL: {url}".format(url=url))
+                    resources_not_matched.append(url)
                     continue
+            if resources_not_matched:
+                log.debug('Could not match %i or %i resource URLs to datasets. e.g. %r',
+                          len(resources_not_matched), progress_total, resources_not_matched[:3])
 
+        log.info('Associating downloads of resource URLs with their respective datasets')
         process_result_data(results.get('rows'))
 
         results = self.service.data().ga().get(
@@ -348,6 +364,7 @@ class DownloadAnalytics(object):
                                  dimensions="ga:eventLabel",
                                  max_results=10000,
                                  end_date=end_date).execute()
+        log.info('Associating downloads of cache resource URLs with their respective datasets')
         process_result_data(results.get('rows'), cached=False)
 
         self._filter_out_long_tail(data, MIN_DOWNLOADS)
