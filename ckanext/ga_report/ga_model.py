@@ -227,7 +227,7 @@ def update_url_stats(period_name, period_complete_day, url_data):
     stores them in GA_Url under the period and recalculates the totals for
     the 'All' period.
     '''
-    progress_total = len(progress_data)
+    progress_total = len(url_data)
     progress_count = 0
     for url, views, visits in url_data:
         progress_count += 1
