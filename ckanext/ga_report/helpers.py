@@ -106,6 +106,10 @@ def _datasets_for_publisher(publisher, count):
     for entry in entries:
         if len(datasets) < count:
             p = model.Package.get(entry.url[len('/dataset/'):])
+            if not p:
+                _log.warning("Could not find Package for {url}".format(url=entry.url))
+                continue
+
             if not p in datasets:
                 datasets[p] = {'views':0, 'visits': 0}
             datasets[p]['views'] = datasets[p]['views'] + int(entry.pageviews)
