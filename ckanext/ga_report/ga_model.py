@@ -214,7 +214,7 @@ def post_update_url_stats():
                   'pageviews': views[key],
                   'visits': visits[key],
                   'department_id': publisher,
-                  'package_id': publisher
+                  'package_id': package
                   }
         model.Session.add(GA_Url(**values))
     model.Session.commit()
