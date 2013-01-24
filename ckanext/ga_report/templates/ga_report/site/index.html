@@ -142,7 +142,12 @@
       $(function() {
         CKAN.GA_Reports.bind_sparklines();
         CKAN.GA_Reports.bind_sidebar();
-        $(window).trigger('hashchange');
+        if (!window.location.hash) {
+          window.location.hash='totals';
+        }
+        else {
+          $(window).trigger('hashchange');
+        }
       });  
     </script>
   </py:def>
