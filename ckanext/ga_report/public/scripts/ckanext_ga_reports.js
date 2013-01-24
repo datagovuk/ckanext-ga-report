@@ -1,8 +1,13 @@
-
 var CKAN = CKAN || {};
 CKAN.GA_Reports = {};
 
 CKAN.GA_Reports.render_rickshaw = function( css_name, data, mode, colorscheme ) {
+    if (!Modernizr.svg) {
+        $("#chart_"+css_name)
+          .html( '<div class="alert">Your browser does not support vector graphics. No graphs can be rendered.</div>')
+          .css('height','auto');
+        return;
+    }
     var graphLegends = $('#graph-legend-container');
     var myLegend = $('<div id="legend_'+css_name+'"/>').appendTo(graphLegends);
 
@@ -24,7 +29,7 @@ CKAN.GA_Reports.render_rickshaw = function( css_name, data, mode, colorscheme ) 
         graph: graph,
         orientation: 'left',
         tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-        element: document.getElementById('y_axis_'+css_name),
+        element: document.getElementById('y_axis_'+css_name)
     } );
     var legend = new Rickshaw.Graph.Legend( {
         element: document.querySelector('#legend_'+css_name),
