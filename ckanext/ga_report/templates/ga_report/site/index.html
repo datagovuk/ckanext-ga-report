@@ -24,6 +24,12 @@
           <a class="btn button btn-primary" href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month or 'all')}">Download as CSV</a></center>
       </p>
     </li>
+    <li class="widget-container boxed widget_text">
+      <h4>Graph Legend</h4>
+      <div id="graph-legend-container">
+        <div id="legend_none">(No graph loaded)</div>
+      </div>
+    </li>
     <xi:include href="../notes.html" />
 
   </py:match>
@@ -43,38 +49,36 @@
 
     <div class="tabbable">
       <ul class="nav nav-tabs">
-        <li class="active"><a href="#totals" data-toggle="tab">Totals</a></li>
+        <li><a href="#totals" data-toggle="hashchange">Totals</a></li>
         <li class="dropdown">
-            <a href="#browsers" class="dropdown-toggle" data-toggle="dropdown">Browsers
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Browsers
                 <b class="caret"></b></a>
             <ul class="dropdown-menu">
-                <li><a href="#browsers_names" data-toggle="tab">Browsers</a></li>
-                <li><a href="#browsers_versions" data-toggle="tab">Versions</a></li>
+                <li><a href="#browsers_names" data-toggle="hashchange">Browsers</a></li>
+                <li><a href="#browsers_versions" data-toggle="hashchange">Versions</a></li>
             </ul>
         </li>
         <li class="dropdown">
-            <a href="#browsers" class="dropdown-toggle" data-toggle="dropdown">Operating<br/>Systems
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Operating Systems
                 <b class="caret"></b></a>
             <ul class="dropdown-menu">
-                <li><a href="#os" data-toggle="tab">Operating Systems</a></li>
-                <li><a href="#os_versions" data-toggle="tab">Versions</a></li>
+                <li><a href="#os" data-toggle="hashchange">Operating Systems</a></li>
+                <li><a href="#os_versions" data-toggle="hashchange">Versions</a></li>
             </ul>
         </li>
         <li class="dropdown">
-            <a href="#browsers" class="dropdown-toggle" data-toggle="dropdown">Social Networks
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Social
                 <b class="caret"></b></a>
             <ul class="dropdown-menu">
-                <li><a href="#social_networks" data-toggle="tab">All networks</a></li>
-                <li><a href="#social_referrals_totals" data-toggle="tab">Referral links</a></li>
+                <li><a href="#social_networks" data-toggle="hashchange">All networks</a></li>
+                <li><a href="#social_referrals_totals" data-toggle="hashchange">Referral links</a></li>
             </ul>
         </li>
-
-        <li><a href="#social_networks" data-toggle="tab"></a></li>
-        <li><a href="#languages" data-toggle="tab">Languages</a></li>
-        <li><a href="#country" data-toggle="tab">Country</a></li>
+        <li><a href="#languages" data-toggle="hashchange">Languages</a></li>
+        <li><a href="#country" data-toggle="hashchange">Country</a></li>
       </ul>
       <div class="tab-content">
-        <div class="tab-pane active" id="totals">
+        <div class="tab-pane" id="totals">
              <table class="table table-condensed table-bordered table-striped">
             	 <tr>
             	   <th>Name</th>
@@ -136,20 +140,9 @@
   <py:def function="optional_footer">
     <script type="text/javascript">
       $(function() {
-          var sparkOptions = {
-            enableTagOptions: true,
-            type: 'line',
-            width: 100,
-            height: 26,
-            chartRangeMin: 0,
-            spotColor: '',
-            maxSpotColor: '',
-            minSpotColor: '',
-            highlightSpotColor: '000000',
-            lineColor: '3F8E6D',
-            fillColor: 'B7E66B'
-          };
-          $('.sparkline').sparkline('html',sparkOptions);
+        CKAN.GA_Reports.bind_sparklines();
+        CKAN.GA_Reports.bind_sidebar();
+        $(window).trigger('hashchange');
       });  
     </script>
   </py:def>

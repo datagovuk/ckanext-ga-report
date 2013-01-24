@@ -16,16 +16,8 @@
   bottom: 0;
 }
 .rickshaw_legend {
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin-left: 15px;
-  padding: 0 5px;
   background: transparent;
-  max-width: 150px;
-  overflow: hidden;
-  background: rgba(0,0,0,0.05);
-  border-radius:5px;
+  width: 100%;
 }
 .rickshaw_y_axis {
   position: absolute;
