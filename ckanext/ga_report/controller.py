@@ -411,49 +411,52 @@ def _to_rickshaw(data, percentageMode=False):
     if data==[]:
         return data
     # Create a consistent x-axis
-    num_points = [ len(package['data']) for package in data ]
+    num_points = [ len(series['data']) for series in data ]
     ideal_index = num_points.index( max(num_points) )
     x_axis = [ point['x'] for point in data[ideal_index]['data'] ]
-    for package in data:
-        xs = [ point['x'] for point in package['data'] ]
+    for series in data:
+        xs = [ point['x'] for point in series['data'] ]
         assert set(xs).issubset( set(x_axis) ), (xs, x_axis)
         # Zero pad any missing values
         for x in set(x_axis).difference(set(xs)):
-            package['data'].append( {'x':x, 'y':0} )
-        assert len(package['data'])==len(x_axis), (len(package['data']),len(x_axis),package['data'],x_axis,set(x_axis).difference(set(xs)))
+            series['data'].append( {'x':x, 'y':0} )
+        assert len(series['data'])==len(x_axis), (len(series['data']),len(x_axis),series['data'],x_axis,set(x_axis).difference(set(xs)))
     if percentageMode:
+        def get_totals(series_list):
+            totals = {}
+            for series in series_list:
+                for point in series['data']:
+                    totals[point['x']] = totals.get(point['x'],0) + point['y']
+            lengths = [ len(series['data']) for series in series_list ]
+            assert len(set(lengths))==1
+            assert lengths[0] == len(totals)
+            return totals
         # Transform data into percentage stacks
-        totals = {}
-        for x in x_axis:
-            for package in data:
-                for point in package['data']:
-                    totals[ point['x'] ] = totals.get(point['x'],0) + point['y']
+        totals = get_totals(data)
         # Roll insignificant series into a catch-all
         THRESHOLD = 0.01
-        significant_series = []
-        for package in data:
-            for point in package['data']:
+        raw_data = data
+        data = []
+        for series in raw_data:
+            for point in series['data']:
                 fraction = float(point['y']) / totals[point['x']]
-                if fraction>THRESHOLD and not (package in significant_series):
-                    significant_series.append(package)
-        temp = {}
-        for package in data:
-            if package in significant_series: continue
-            for point in package['data']:
-                temp[point['x']] = temp.get(point['x'],0) + point['y']
-        catch_all = { 'name':'Other','data': [ {'x':x,'y':y} for x,y in temp.items() ] }
-        # Roll insignificant series into one
-        data = significant_series
-        data.append(catch_all)
+                if not (series in data) and fraction>THRESHOLD:
+                    data.append(series)
+        # Overwrite data with a set of intereting series
+        others = [ x for x in raw_data if not (x in data) ]
+        data.append({ 
+            'name':'Other',
+            'data': [ {'x':x,'y':y} for x,y in get_totals(others).items() ] 
+            })
         # Turn each point into a percentage
-        for package in data:
-            for point in package['data']:
+        for series in data:
+            for point in series['data']:
                 point['y'] = (point['y']*100) / totals[point['x']]
     # Sort the points
-    for package in data:
-        package['data'] = sorted( package['data'], key=lambda x:x['x'] )
+    for series in data:
+        series['data'] = sorted( series['data'], key=lambda x:x['x'] )
         # Strip the latest month's incomplete analytics
-        package['data'] = package['data'][:-1]
+        series['data'] = series['data'][:-1]
     return data
 
 
