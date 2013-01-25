@@ -39,14 +39,9 @@ CKAN.GA_Reports.render_rickshaw = function( css_name, data, mode, colorscheme ) 
         element: document.querySelector('#legend_'+css_name),
         graph: graph
     } );
-    var hoverDetail = new Rickshaw.Graph.HoverDetail( {
+    var shelving = new Rickshaw.Graph.Behavior.Series.Toggle( {
       graph: graph,
-      formatter: function(series, x, y) {
-        var date = '<span class="date">' + new Date(x * 1000).toUTCString() + '</span>';
-        var swatch = '<span class="detail_swatch" style="background-color: ' + series.color + '"></span>';
-        var content = swatch + series.name + ": " + parseInt(y) + '<br>' + date;
-        return content;
-      }
+      legend: legend
     } );
     graph.render();
 };
