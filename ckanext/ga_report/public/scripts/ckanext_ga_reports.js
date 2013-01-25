@@ -2,13 +2,17 @@ var CKAN = CKAN || {};
 CKAN.GA_Reports = {};
 
 CKAN.GA_Reports.render_rickshaw = function( css_name, data, mode, colorscheme ) {
+    var graphLegends = $('#graph-legend-container');
+
     if (!Modernizr.svg) {
         $("#chart_"+css_name)
           .html( '<div class="alert">Your browser does not support vector graphics. No graphs can be rendered.</div>')
-          .css('height','auto');
+          .closest('.rickshaw_chart_container').css('height',50);
+        var myLegend = $('<div id="legend_'+css_name+'"/>')
+          .html('(Graph cannot be rendered)')
+          .appendTo(graphLegends);
         return;
     }
-    var graphLegends = $('#graph-legend-container');
     var myLegend = $('<div id="legend_'+css_name+'"/>').appendTo(graphLegends);
 
     var palette = new Rickshaw.Color.Palette( { scheme: colorscheme } );

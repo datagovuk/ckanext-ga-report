@@ -1,4 +1,4 @@
-if (Modernizr.svg){(function() {
+(function() {
   function d3_class(ctor, properties) {
     try {
       for (var key in properties) {
@@ -7023,4 +7023,4 @@ if (Modernizr.svg){(function() {
   d3.time.scale.utc = function() {
     return d3_time_scale(d3.scale.linear(), d3_time_scaleUTCMethods, d3_time_scaleUTCFormat);
   };
-})();}
+})();
