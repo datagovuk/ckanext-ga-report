@@ -71,16 +71,16 @@
       </ul>
       <div class="tab-content">
         <div class="tab-pane" id="totals">
-             <table class="table table-condensed table-bordered table-striped">
+             <table class="ga-reports-table table table-condensed table-bordered table-striped">
             	 <tr>
             	   <th>Name</th>
-            	   <th>Value</th>
+            	   <th class="td-numeric">Value</th>
             	   <th>History</th>
             	 </tr>
                 <py:for each="name, value, graph in c.global_totals">
                     <tr>
                         <td>${name}</td>
-                        <td>${value}</td>
+                        <td class="td-numeric">${value}</td>
                         <td class="sparkline-cell">
                           <span class="sparkline" sparkTooltips="${','.join([x for x,y in graph])}">
                             ${','.join([y for x,y in graph])}

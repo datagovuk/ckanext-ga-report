@@ -44,3 +44,7 @@
   float: left;
   width: 200px;
 }
+
+.ga-reports-table .td-numeric {
+  text-align: center;
+}

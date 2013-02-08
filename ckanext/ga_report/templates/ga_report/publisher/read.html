@@ -62,7 +62,7 @@
         </div>
      </form>
      <py:if test="c.top_packages">
-       <table class="table table-condensed table-bordered table-striped">
+       <table class="ga-reports-table table table-condensed table-bordered table-striped">
          <tr>
            <th>Dataset</th>
            <th>Views</th>
@@ -73,8 +73,8 @@
              <td>
                ${h.link_to(package.title or package.name, h.url_for(controller='package', action='read', id=package.name))}
              </td>
-             <td>${views}</td>
-             <td>${downloads}</td>
+             <td class="td-numeric">${views}</td>
+             <td class="td-numeric">${downloads}</td>
           </tr>
         </py:for>
       </table>

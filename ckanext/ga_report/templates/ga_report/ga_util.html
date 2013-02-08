@@ -14,7 +14,7 @@
 </select>
 
 
-<table py:def="social_table(items, with_source=False)" class="table table-condensed table-bordered table-striped">
+<table py:def="social_table(items, with_source=False)" class="ga-reports-table table table-condensed table-bordered table-striped">
     <tr>
         <th>Name</th>
         <th py:if="with_source">Source</th>
@@ -24,7 +24,7 @@
     <tr>
         <td><a href="${url}">${name}</a></td>
         <td py:if="with_source">${source}</td>
-        <td>${count}</td>
+        <td class="td-numeric">${count}</td>
     </tr>
     </py:for>
  </table>
@@ -45,15 +45,15 @@
 </div>
 
 
-<table py:def="stat_table(items, title='Views')" class="table table-condensed table-bordered table-striped">
+<table py:def="stat_table(items, title='Views')" class="ga-reports-table table table-condensed table-bordered table-striped">
     <tr>
         <th>Name</th>
-        <th>% ${title}</th>
+        <th class="td-numeric">% ${title}</th>
     </tr>
     <py:for each="name, value in items">
     <tr>
         <td>${name}</td>
-        <td>${value}</td>
+        <td class="td-numeric">${value}</td>
     </tr>
     </py:for>
  </table>
