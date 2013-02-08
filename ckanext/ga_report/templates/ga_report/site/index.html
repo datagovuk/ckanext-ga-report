@@ -39,15 +39,6 @@
       <h1>Site Usage</h1>
       ${usage_nav('Site-wide')}
 
-      <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
-          <div class="controls">
-
-          ${month_selector(c.month, c.months, c.day)}
-
-           <input class="btn button btn-primary" type='submit' value="Update"/>
-          </div>
-       </form>
-
     <div class="tabbable">
       <ul class="nav nav-tabs">
         <li><a href="#totals" data-toggle="hashchange">Totals</a></li>
@@ -102,35 +93,67 @@
          <div class="tab-pane" id="browsers_versions">
              ${rickshaw_graph(c.browser_versions_graph,'browser-versions',mode='stack')}
              <p>Note: Where a browser has a large number of versions, these have been grouped together.</p>
+             <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
+               <label>Show stats table for:</label>
+               ${month_selector(c.month, c.months, c.day)}
+             </form>
              ${stat_table(c.browser_versions)}
          </div>
          <div class="tab-pane" id="browsers_names">
              ${rickshaw_graph(c.browsers_graph,'browsers',mode='stack')}
+             <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
+               <label>Show stats table for:</label>
+               ${month_selector(c.month, c.months, c.day)}
+             </form>
              ${stat_table(c.browsers)}
          </div>
          <div class="tab-pane" id="os">
              ${rickshaw_graph(c.os_graph,'os',mode='stack')}
+             <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
+               <label>Show stats table for:</label>
+               ${month_selector(c.month, c.months, c.day)}
+             </form>
              ${stat_table(c.os)}
          </div>
          <div class="tab-pane" id="os_versions">
              ${rickshaw_graph(c.os_versions_graph,'os_versions',mode='stack')}
+             <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
+               <label>Show stats table for:</label>
+               ${month_selector(c.month, c.months, c.day)}
+             </form>
              ${stat_table(c.os_versions)}
          </div>
         <div class="tab-pane" id="social_referrals_totals">
             <p>Number of visits that were referred from social networks</p>
+             <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
+               <label>Show stats table for:</label>
+               ${month_selector(c.month, c.months, c.day)}
+             </form>
             ${social_table(c.social_referrer_totals)}
         </div>
         <div class="tab-pane" id="social_networks">
              ${rickshaw_graph(c.social_networks_graph, 'social_networks',mode='stack')}
             <p>Percentage of visits that were referred from these social networks</p>
+             <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
+               <label>Show stats table for:</label>
+               ${month_selector(c.month, c.months, c.day)}
+             </form>
              ${stat_table(c.social_networks, 'Visits')}
         </div>
         <div class="tab-pane" id="languages">
              ${rickshaw_graph(c.languages_graph,'languages',mode='stack')}
+             <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
+               <label>Show stats table for:</label>
+               ${month_selector(c.month, c.months, c.day)}
+             </form>
              ${stat_table(c.languages)}
         </div>
         <div class="tab-pane" id="country">
              ${rickshaw_graph(c.country_graph,'country',mode='stack')}
+             <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
+               <label>Show stats table for:</label>
+               ${month_selector(c.month, c.months, c.day)}
+             </form>
              ${stat_table(c.country)}
         </div>
        </div>
@@ -143,6 +166,7 @@
       $(function() {
         CKAN.GA_Reports.bind_sparklines();
         CKAN.GA_Reports.bind_sidebar();
+        CKAN.GA_Reports.bind_month_selector();
         if (!window.location.hash) {
           window.location.hash='totals';
         }

@@ -39,16 +39,14 @@
       ${usage_nav('Publishers')}
 
 
+       ${rickshaw_graph(c.top_publishers_graph,'publishers')}
       <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}" method="get">
           <div class="controls">
-
-          ${month_selector(c.month, c.months, c.day)}
-
-           <input class="btn button btn-primary" type='submit' value="Update"/>
+            <label>Show stats table for:</label>
+            ${month_selector(c.month, c.months, c.day)}
           </div>
        </form>
 
-       ${rickshaw_graph(c.top_publishers_graph,'publishers')}
        <table class="table table-condensed table-bordered table-striped">
 	 <tr>
 	   <th>Publisher</th>
@@ -67,16 +65,14 @@
 
   </div>
 
-  <xi:include href="../../layout.html" />
-
   <py:def function="optional_footer">
-    <script type='text/javascript'>
-        $('.nav-tabs li a').click(function (e) {
-          e.preventDefault();
-          $(this).tab('show');
-        })
+    <script type="text/javascript">
+      $(function() {
+        CKAN.GA_Reports.bind_month_selector();
+      });
     </script>
   </py:def>
+  <xi:include href="../../layout.html" />
 
 </html>
 

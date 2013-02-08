@@ -38,6 +38,14 @@
 
      ${usage_nav('Datasets')}
 
+
+     <h3 py:if="c.publisher"><a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController',action='read',id=c.publisher.name)}">${c.publisher.title}</a></h3>
+
+     <p py:if="not c.top_packages">No page views in this period</p>
+
+     <py:if test="c.top_packages">
+       ${rickshaw_graph(c.graph_data,'dataset-downloads',debug=True)}
+     </py:if>
      <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}" method="get">
         <div class="controls">
 
@@ -52,13 +60,7 @@
           <input class="btn button btn-primary" type='submit' value="Update"/>
         </div>
      </form>
-
-     <h3 py:if="c.publisher"><a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController',action='read',id=c.publisher.name)}">${c.publisher.title}</a></h3>
-
-     <p py:if="not c.top_packages">No page views in this period</p>
-
      <py:if test="c.top_packages">
-       ${rickshaw_graph(c.graph_data,'dataset-downloads',debug=True)}
        <table class="table table-condensed table-bordered table-striped">
          <tr>
            <th>Dataset</th>

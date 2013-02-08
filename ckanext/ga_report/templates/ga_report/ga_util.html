@@ -36,7 +36,9 @@
     <div id="chart_$id" class="rickshaw_chart"></div>
     <script type="text/javascript">
       $(function() {
-          CKAN.GA_Reports.render_rickshaw('$id', $items_json, '$mode', '$colorscheme');
+          var items = $items_json;
+          if (items.length==0) { return; }
+          CKAN.GA_Reports.render_rickshaw('$id', items, '$mode', '$colorscheme');
       });
     </script>
   </div>

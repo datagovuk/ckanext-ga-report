@@ -19,6 +19,8 @@ CKAN.GA_Reports.render_rickshaw = function( css_name, data, mode, colorscheme ) 
     $.each(data, function(i, object) {
         object['color'] = palette.color();
     });
+    // Rickshaw renders the legend in reverse order...
+    data.reverse();
 
     var graphElement =  document.querySelector("#chart_"+css_name);
 
@@ -95,6 +97,18 @@ CKAN.GA_Reports.bind_sidebar = function() {
       $(legend_name).show();
     }
   );
+};
+
+CKAN.GA_Reports.bind_month_selector = function() {
+  var handler = function(e) { 
+    var target = $(e.delegateTarget);
+    var form = target.closest('form');
+    form.attr('action', form.attr('action')+window.location.hash);
+    form.submit();
+  };
+  var selectors = $('select[name="month"]');
+  assert(selectors.length>0);
+  selectors.bind('change', handler);
 };
 
 /* 

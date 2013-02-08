@@ -191,25 +191,11 @@ class GaReport(BaseController):
             q = model.Session.query(GA_Stat).\
                 filter(GA_Stat.stat_name==k).\
                 order_by(GA_Stat.period_name)
-            # Run the query on all months to gather graph data
-            graph = {}
-            for stat in q:
-                graph[ stat.key ] = graph.get(stat.key,{
-                    'name':stat.key, 
-                    'data': []
-                    })
-                graph[ stat.key ]['data'].append({
-                    'x':_get_unix_epoch(stat.period_name),
-                    'y':float(stat.value)
-                    })
-            setattr(c, v+'_graph', json.dumps( _to_rickshaw(graph.values(),percentageMode=True) ))
-
             # Buffer the tabular data
             if c.month:
                 entries = []
                 q = q.filter(GA_Stat.period_name==c.month).\
                           order_by('ga_stat.value::int desc')
-
             d = collections.defaultdict(int)
             for e in q.all():
                 d[e.key] += int(e.value)
@@ -217,6 +203,23 @@ class GaReport(BaseController):
             for key, val in d.iteritems():
                 entries.append((key,val,))
             entries = sorted(entries, key=operator.itemgetter(1), reverse=True)
+
+            # Run a query on all months to gather graph data
+            graph_query = model.Session.query(GA_Stat).\
+                filter(GA_Stat.stat_name==k).\
+                order_by(GA_Stat.period_name)
+            graph_dict = {}
+            for stat in graph_query:
+                graph_dict[ stat.key ] = graph_dict.get(stat.key,{
+                    'name':stat.key, 
+                    'data': []
+                    })
+                graph_dict[ stat.key ]['data'].append({
+                    'x':_get_unix_epoch(stat.period_name),
+                    'y':float(stat.value)
+                    })
+            graph = [ graph_dict[x[0]] for x in entries ]
+            setattr(c, v+'_graph', json.dumps( _to_rickshaw(graph,percentageMode=True) ))
 
             # Get the total for each set of values and then set the value as
             # a percentage of the total
@@ -298,7 +301,7 @@ class GaDatasetReport(BaseController):
             c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
         c.top_publishers, graph_data = _get_top_publishers()
-        c.top_publishers_graph = json.dumps( _to_rickshaw(graph_data.values()) )
+        c.top_publishers_graph = json.dumps( _to_rickshaw(graph_data) )
 
         return render('ga_report/publisher/index.html')
 
@@ -390,27 +393,28 @@ class GaDatasetReport(BaseController):
             .filter(model.Package.name==GA_Url.package_id)\
             .filter(GA_Url.url.like('/dataset/%'))\
             .filter(GA_Url.package_id.in_(top_package_names))
-        graph_data = {}
+        graph_dict = {}
         for entry,package in graph_query:
             if not package: continue
             if entry.period_name=='All': continue
-            graph_data[package.id] = graph_data.get(package.id,{
+            graph_dict[package.name] = graph_dict.get(package.name,{
                 'name':package.title,
                 'data':[]
                 })
-            graph_data[package.id]['data'].append({
+            graph_dict[package.name]['data'].append({
                 'x':_get_unix_epoch(entry.period_name),
                 'y':int(entry.pageviews),
                 })
-                    
-        c.graph_data = json.dumps( _to_rickshaw(graph_data.values()) )
+        graph = [ graph_dict[x] for x in top_package_names ]
+
+        c.graph_data = json.dumps( _to_rickshaw(graph) )
 
         return render('ga_report/publisher/read.html')
 
 def _to_rickshaw(data, percentageMode=False):
     if data==[]:
         return data
-    # Create a consistent x-axis
+    # Create a consistent x-axis between all series
     num_points = [ len(series['data']) for series in data ]
     ideal_index = num_points.index( max(num_points) )
     x_axis = [ point['x'] for point in data[ideal_index]['data'] ]
@@ -420,7 +424,6 @@ def _to_rickshaw(data, percentageMode=False):
         # Zero pad any missing values
         for x in set(x_axis).difference(set(xs)):
             series['data'].append( {'x':x, 'y':0} )
-        assert len(series['data'])==len(x_axis), (len(series['data']),len(x_axis),series['data'],x_axis,set(x_axis).difference(set(xs)))
     if percentageMode:
         def get_totals(series_list):
             totals = {}
@@ -488,7 +491,7 @@ def _get_top_publishers(limit=20):
             department_ids.append(row[0])
             top_publishers.append((g, row[1], row[2]))
 
-    graph = {}
+    graph = []
     if limit is not None:
         # Query for a history graph of these publishers
         q = model.Session.query(
@@ -500,15 +503,19 @@ def _get_top_publishers(limit=20):
             .filter( GA_Url.url.like('/dataset/%') )\
             .filter( GA_Url.package_id!='' )\
             .group_by( GA_Url.department_id, GA_Url.period_name )
+        graph_dict = {}
         for dept_id,period_name,views in q:
-            graph[dept_id] = graph.get( dept_id, {
+            graph_dict[dept_id] = graph_dict.get( dept_id, {
                 'name' : model.Group.get(dept_id).title,
                 'data' : []
                 })
-            graph[dept_id]['data'].append({
+            graph_dict[dept_id]['data'].append({
                 'x': _get_unix_epoch(period_name),
                 'y': views
                 })
+        # Sort dict into ordered list
+        for id in department_ids:
+            graph.append( graph_dict[id] )
     return top_publishers, graph
 
 

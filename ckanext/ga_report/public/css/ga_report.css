@@ -30,3 +30,17 @@
   color: #000000 !important;
   font-weight: normal !important;
 }
+
+.rickshaw_legend .line .action {
+  display: none;
+}
+.rickshaw_legend .line .swatch {
+  display: block;
+  float: left;
+}
+.rickshaw_legend .line .label {
+  display: block;
+  white-space: normal;
+  float: left;
+  width: 200px;
+}
