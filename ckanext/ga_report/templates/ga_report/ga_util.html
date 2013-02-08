@@ -63,12 +63,13 @@
     <div id="minornavigation-bg-left">
     <div id="minornavigation-bg-right">
       <ul class="nav nav-pills">
-        <li py:attrs="{'class': 'active' if active_name=='Site-wide' else None}"><a py:attrs="{'class': 'active' if active_name=='Site-wide' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Site-wide</a></li>
+        <?python querystring='?month='+c.month if c.month else '' ?>
+        <li py:attrs="{'class': 'active' if active_name=='Site-wide' else None}"><a py:attrs="{'class': 'active' if active_name=='Site-wide' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}${querystring}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Site-wide</a></li>
         <li py:attrs="{'class': 'active' if active_name=='Publishers' else None}">
-                <a py:attrs="{'class': 'active' if active_name=='Publishers' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Publishers</a>
+        <a py:attrs="{'class': 'active' if active_name=='Publishers' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}${querystring}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Publishers</a>
         </li>
         <li py:attrs="{'class': 'active' if active_name=='Datasets' else None}">
-                <a py:attrs="{'class': 'active' if active_name=='Datasets' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Datasets</a>
+        <a py:attrs="{'class': 'active' if active_name=='Datasets' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}${querystring}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Datasets</a>
         </li>
       </ul>
     </div>
