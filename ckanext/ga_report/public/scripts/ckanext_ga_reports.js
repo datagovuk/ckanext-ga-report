@@ -45,6 +45,7 @@ CKAN.GA_Reports.render_rickshaw = function( css_name, data, mode, colorscheme ) 
       graph: graph,
       legend: legend
     } );
+    myLegend.prepend('<div class="instructions">Click on a series below to isolate its graph:</div>');
     graph.render();
 };
 
@@ -94,6 +95,7 @@ CKAN.GA_Reports.bind_sidebar = function() {
       }
       legend_name = '#legend_'+legend_name;
       $('#graph-legend-container > *').hide();
+      $('#graph-legend-container .instructions').show();
       $(legend_name).show();
     }
   );
