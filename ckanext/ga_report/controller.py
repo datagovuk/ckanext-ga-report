@@ -417,11 +417,14 @@ def _to_rickshaw(data, percentageMode=False):
     # Create a consistent x-axis between all series
     num_points = [ len(series['data']) for series in data ]
     ideal_index = num_points.index( max(num_points) )
-    x_axis = [ point['x'] for point in data[ideal_index]['data'] ]
+    x_axis = []
+    for series in data:
+        for point in series['data']:
+            x_axis.append(point['x'])
+    x_axis = sorted( list( set(x_axis) ) )
+    # Zero pad any missing values
     for series in data:
         xs = [ point['x'] for point in series['data'] ]
-        assert set(xs).issubset( set(x_axis) ), (xs, x_axis)
-        # Zero pad any missing values
         for x in set(x_axis).difference(set(xs)):
             series['data'].append( {'x':x, 'y':0} )
     if percentageMode:
@@ -430,9 +433,6 @@ def _to_rickshaw(data, percentageMode=False):
             for series in series_list:
                 for point in series['data']:
                     totals[point['x']] = totals.get(point['x'],0) + point['y']
-            lengths = [ len(series['data']) for series in series_list ]
-            assert len(set(lengths))==1
-            assert lengths[0] == len(totals)
             return totals
         # Transform data into percentage stacks
         totals = get_totals(data)
