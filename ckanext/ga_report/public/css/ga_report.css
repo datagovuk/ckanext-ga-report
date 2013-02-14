@@ -18,6 +18,7 @@
 .rickshaw_legend {
   background: transparent;
   width: 100%;
+  padding-top: 4px;
 }
 .rickshaw_y_axis {
   position: absolute;
@@ -29,6 +30,10 @@
   background: transparent !important;
   color: #000000 !important;
   font-weight: normal !important;
+}
+.rickshaw_legend .instructions {
+  color: #000;
+  margin-bottom: 6px;
 }
 
 .rickshaw_legend .line .action {
@@ -43,6 +48,9 @@
   white-space: normal;
   float: left;
   width: 200px;
+}
+.rickshaw_legend .line .label:hover {
+  text-decoration: underline;
 }
 
 .ga-reports-table .td-numeric {
