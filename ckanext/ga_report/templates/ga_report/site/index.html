@@ -71,6 +71,10 @@
       </ul>
       <div class="tab-content">
         <div class="tab-pane" id="totals">
+             <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}" method="get">
+               <label>Show stats table for:</label>
+               ${month_selector(c.month, c.months, c.day)}
+             </form>
              <table class="ga-reports-table table table-condensed table-bordered table-striped">
             	 <tr>
             	   <th>Name</th>

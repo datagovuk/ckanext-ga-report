@@ -69,9 +69,9 @@ CKAN.GA_Reports.bind_sparklines = function() {
             spotColor: '',
             maxSpotColor: '',
             minSpotColor: '',
-            highlightSpotColor: '000000',
-            lineColor: '3F8E6D',
-            fillColor: 'B7E66B'
+            highlightSpotColor: '#000000',
+            lineColor: '#3F8E6D',
+            fillColor: '#B7E66B'
           };
           $('.sparkline').sparkline('html',sparkOptions);
           created = true;
