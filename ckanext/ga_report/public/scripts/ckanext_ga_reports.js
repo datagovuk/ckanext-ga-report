@@ -87,7 +87,7 @@ CKAN.GA_Reports.bind_sidebar = function() {
    * Show the correct rickshaw graph in the sidebar. 
    * Not to be called before all graphs load.
    */
-  $('a[data-toggle="hashchange"]').on(
+  $('a[data-toggle="hashtab"]').on(
     'shown',
     function(e) {
       var href = $(e.target).attr('href');
@@ -104,6 +104,8 @@ CKAN.GA_Reports.bind_sidebar = function() {
       $(legend_name).show();
     }
   );
+  /* The first tab might already have been shown */
+  $('li.active > a[data-toggle="hashtab"]').trigger('shown');
 };
 
 CKAN.GA_Reports.bind_month_selector = function() {
@@ -117,22 +119,3 @@ CKAN.GA_Reports.bind_month_selector = function() {
   assert(selectors.length>0);
   selectors.bind('change', handler);
 };
-
-/* 
- * Custom bootstrap plugin for handling data-toggle="hashchange".
- * Behaves like data-toggle="tab" but I respond to the hashchange.
- * Page state is memo-ized in the URL this way. Why doesn't Bootstrap do this?
- */
-$(function() {
-  var mapping = {};
-  $('a[data-toggle="hashchange"]').each(
-    function(i,link) {
-      link = $(link);
-      mapping[link.attr('href')] = link;
-    }
-  );
-  $(window).hashchange(function() {
-    var link = mapping[window.location.hash];
-    if (link) { link.tab('show'); }
-  });
-});
