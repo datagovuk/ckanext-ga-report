@@ -2,6 +2,11 @@
   padding: 1px 0 0 0;
   width: 108px;
   text-align: center;
+  /* Hack to hide the momentary flash of text 
+   * before sparklines are fully rendered */
+  font-size: 1px;
+  color: transparent;
+  overflow: hidden;
 }
 .rickshaw_chart_container {
   position: relative;
