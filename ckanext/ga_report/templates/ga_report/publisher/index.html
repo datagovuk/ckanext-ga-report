@@ -7,6 +7,8 @@
 
   <py:def function="page_title">Usage by Publisher</py:def>
 
+  <py:def function="content_class"><!----></py:def>
+
   <py:match path="primarysidebar">
     <li class="widget-container boxed widget_text">
       <h4>Download</h4>
@@ -35,13 +37,12 @@
 
   <div py:match="content">
 
-      <h1>Site Usage</h1>
+    <h1>Site Usage ${usage_nav('Publishers')}</h1>
 
-      ${usage_nav('Publishers')}
-
+    <div class="boxed">
 
        ${rickshaw_graph(c.top_publishers_graph,'publishers')}
-      <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}" method="get">
+       <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}" method="get">
           <div class="controls">
             <label>Show stats table for:</label>
             ${month_selector(c.month, c.months, c.day)}
@@ -49,22 +50,21 @@
        </form>
 
        <table class="ga-reports-table table table-condensed table-bordered table-striped">
-	 <tr>
-	   <th>Publisher</th>
-	   <th class="td-numeric">Dataset Views</th>
-	 </tr>
+         <tr>
+           <th>Publisher</th>
+           <th class="td-numeric">Dataset Views</th>
+         </tr>
         <py:for each="publisher, views, visits in c.top_publishers">
-	  <tr>
-	    <td>
-	        ${h.link_to(publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport', action='read_publisher', id=publisher.name) + (("?month=" + c.month) if c.month else ''))}
-	    </td>
-	    <td class="td-numeric">${views}</td>
-	  </tr>
+          <tr>
+            <td>
+                ${h.link_to(publisher.title, h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport', action='read_publisher', id=publisher.name) + (("?month=" + c.month) if c.month else ''))}
+            </td>
+            <td class="td-numeric">${views}</td>
+          </tr>
         </py:for>
        </table>
-
-
-  </div>
+    </div><!--/boxed-->
+  </div><!--/content-->
 
   <py:def function="optional_footer">
     <script type="text/javascript">

@@ -7,6 +7,8 @@
 
   <py:def function="page_title">Downloads</py:def>
 
+  <py:def function="content_class"><!----></py:def>
+
   <py:match path="primarysidebar">
     <li py:if="c.downloads" class="widget-container boxed widget_text">
       <h4>Download</h4>
@@ -19,8 +21,9 @@
   </py:match>
 
   <div py:match="content">
-      <h1>Downloads</h1>
-      ${usage_nav('Downloads')}
+      <h1>Downloads ${usage_nav('Downloads')}</h1>
+
+    <div class="boxed">
 
       <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='downloads')}" method="get">
           <div class="controls">
@@ -38,6 +41,7 @@
          <h4>No data</h4>
          <p>There is no download data available for this month</p>
        </py:if>
+     </div>
   </div>
 
   <xi:include href="../../layout.html" />

@@ -59,21 +59,15 @@
  </table>
 
 
-<div py:def="usage_nav(active_name)" id="minornavigation">
-    <div id="minornavigation-bg-left">
-    <div id="minornavigation-bg-right">
-      <ul class="nav nav-pills">
-        <?python querystring='?month='+c.month if c.month else '' ?>
-        <li py:attrs="{'class': 'active' if active_name=='Site-wide' else None}"><a py:attrs="{'class': 'active' if active_name=='Site-wide' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}${querystring}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Site-wide</a></li>
-        <li py:attrs="{'class': 'active' if active_name=='Publishers' else None}">
-        <a py:attrs="{'class': 'active' if active_name=='Publishers' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}${querystring}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Publishers</a>
-        </li>
-        <li py:attrs="{'class': 'active' if active_name=='Datasets' else None}">
-        <a py:attrs="{'class': 'active' if active_name=='Datasets' else None}"  href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}${querystring}"><img src="/images/icons/page_white.png" height="16px" width="16px" alt="None" class="inline-icon "/> Datasets</a>
-        </li>
-      </ul>
-    </div>
-    </div>
+<div py:def="usage_nav(active_name)">
+  <span class="subheading">
+    <img src="/images/arrow-down-right.png" />
+    <a class="${if_(active_name=='Site-wide','active')}" href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}${if_(c.month,'?month='+c.month)}">Site-wide</a>
+    <span class="divider">|</span>
+    <a class="${if_(active_name=='Publishers','active')}" href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}${if_(c.month,'?month='+c.month)}">Publishers</a>
+    <span class="divider">|</span>
+    <a class="${if_(active_name=='Datasets','active')}" href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}${if_(c.month,'?month='+c.month)}">Datasets</a>
+  </span>
 </div>
 
 

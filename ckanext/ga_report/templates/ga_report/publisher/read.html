@@ -7,6 +7,8 @@
 
   <py:def function="page_title">Usage by Dataset</py:def>
 
+  <py:def function="content_class"><!----></py:def>
+
   <py:def function="optional_head">
     <link rel="stylesheet" type="text/css" href="/scripts/vendor/rickshaw.min.css"/>
     <link rel="stylesheet" type="text/css" href="/css/ga_report.css?1"/>
@@ -35,11 +37,9 @@
 
 
   <div py:match="content">
-     <h1>Site Usage</h1>
+    <h1>Site Usage ${usage_nav('Datasets')}</h1>
 
-     ${usage_nav('Datasets')}
-
-
+    <div class="boxed">
      <h3 py:if="c.publisher"><a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController',action='read',id=c.publisher.name)}">${c.publisher.title}</a></h3>
 
      <p py:if="not c.top_packages">No page views in this period</p>
@@ -80,6 +80,7 @@
       </table>
     </py:if>
 
+  </div>
 
   </div>
 
