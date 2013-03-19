@@ -10,14 +10,7 @@
   <py:def function="content_class"><!----></py:def>
 
   <py:match path="primarysidebar">
-    <li py:if="c.downloads" class="widget-container boxed widget_text">
-      <h4>Download</h4>
-      <p><center>
-          <a class="btn button btn-primary" href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv_downloads',month=c.month or 'all')}">Download as CSV</a></center>
-      </p>
-    </li>
-    <xi:include href="../notes.html" />
-
+    ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv_downloads',month=c.month or 'all'))}
   </py:match>
 
   <div py:match="content">

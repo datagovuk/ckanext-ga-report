@@ -70,5 +70,31 @@
   </span>
 </div>
 
+<div py:def="ga_sidebar(download_link)">
+  <div class="boxed">
+    <div class="widget-container widget_text">
+      <h4>Download</h4>
+      <p><center>
+        <a class="btn button btn-primary" href="${download_link}">Download as CSV</a></center>
+      </p>
+    </div>
+    <div class="widget-container widget_text">
+      <h4>Graph Legend</h4>
+      <div id="graph-legend-container">
+        <div id="legend_none">(No graph loaded)</div>
+      </div>
+    </div>
+    <div class="widget-container widget_text">
+      <h4>Notes</h4>
+      <ul>
+          <li>"Views" is the number of times a page was loaded in users' browsers.</li>
+          <li>"Downloads" is the number of times a user has clicked to download either an original or cached resource for a particular dataset. Download information is only available from 2nd December 2012; 'No data' is shown for records before that date.</li>
+          <li>These usage statistics are confined to users with javascript enabled, which excludes web crawlers and API calls.</li>
+          <li>The results are not shown when the number of views/visits is tiny. Where these relate to site pages, results are available in full in the CSV download. Where these relate to users' web browser information, results are not disclosed, for privacy reasons.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 
 </html>

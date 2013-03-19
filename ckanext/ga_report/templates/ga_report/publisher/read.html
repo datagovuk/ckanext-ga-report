@@ -21,18 +21,7 @@
   </py:def>
 
   <py:match path="primarysidebar">
-    <li class="widget-container boxed widget_text">
-      <h4>Download</h4>
-      <p><center>
-          <a class="btn button btn-primary" href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='dataset_csv',id=c.publisher_name or 'all',month=c.month or 'all')}">Download as CSV</a></center>
-      </p>
-    </li>
-    <li class="widget-container boxed widget_text">
-      <h4>Graph Legend</h4>
-      <div id="graph-legend-container">
-      </div>
-    </li>
-    <xi:include href="../notes.html" />
+    ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='dataset_csv',id=c.publisher_name or 'all',month=c.month or 'all'))}
   </py:match>
 
 
