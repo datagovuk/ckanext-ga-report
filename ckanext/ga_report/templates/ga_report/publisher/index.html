@@ -7,8 +7,6 @@
 
   <py:def function="page_title">Usage by Publisher</py:def>
 
-  <py:def function="content_class"><!----></py:def>
-
 
   <py:match path="primarysidebar">
     ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publisher_csv',month=c.month or 'all'))}
