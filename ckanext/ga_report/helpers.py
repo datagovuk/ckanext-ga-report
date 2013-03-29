@@ -80,7 +80,7 @@ def single_popular_dataset_html(top=20):
     return base.render_snippet('ga_report/ga_popular_single.html', **context)
 
 
-def most_popular_datasets(publisher, count=20):
+def most_popular_datasets(publisher, count=20, preview_image=None):
 
     if not publisher:
         _log.error("No valid publisher passed to 'most_popular_datasets'")
@@ -92,7 +92,8 @@ def most_popular_datasets(publisher, count=20):
         'dataset_count': len(results),
         'datasets': results,
 
-        'publisher': publisher
+        'publisher': publisher,
+        'preview_image': preview_image
     }
 
     return base.render_snippet('ga_report/publisher/popular.html', **ctx)
