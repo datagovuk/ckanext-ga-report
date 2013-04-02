@@ -450,10 +450,11 @@ def _to_rickshaw(data, percentageMode=False):
                     data.append(series)
         # Overwrite data with a set of interesting series
         others = [ x for x in raw_data if not (x in data) ]
-        data.append({ 
-            'name':'Other',
-            'data': [ {'x':x,'y':y} for x,y in get_totals(others).items() ] 
-            })
+        if len(others):
+            data.append({ 
+                'name':'Other',
+                'data': [ {'x':x,'y':y} for x,y in get_totals(others).items() ] 
+                })
         # Turn each point into a percentage
         for series in data:
             for point in series['data']:
