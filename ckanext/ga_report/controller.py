@@ -218,7 +218,10 @@ class GaReport(BaseController):
                     'x':_get_unix_epoch(stat.period_name),
                     'y':float(stat.value)
                     })
-            graph = [ graph_dict[x[0]] for x in entries ]
+            stats_in_table = [x[0] for x in entries]
+            stats_not_in_table = set(graph_dict.keys()) - set(stats_in_table)
+            stats = stats_in_table + sorted(list(stats_not_in_table))
+            graph = [graph_dict[x] for x in stats]
             setattr(c, v+'_graph', json.dumps( _to_rickshaw(graph,percentageMode=True) ))
 
             # Get the total for each set of values and then set the value as
@@ -445,7 +448,7 @@ def _to_rickshaw(data, percentageMode=False):
                 fraction = float(point['y']) / totals[point['x']]
                 if not (series in data) and fraction>THRESHOLD:
                     data.append(series)
-        # Overwrite data with a set of intereting series
+        # Overwrite data with a set of interesting series
         others = [ x for x in raw_data if not (x in data) ]
         data.append({ 
             'name':'Other',
