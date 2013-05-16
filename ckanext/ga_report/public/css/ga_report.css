@@ -61,3 +61,8 @@
 .ga-reports-table .td-numeric {
   text-align: center;
 }
+.ga-reports-heading {
+  padding-right: 10px;
+  margin-top: 4px;
+  float: left;
+}

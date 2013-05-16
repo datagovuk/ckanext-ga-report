@@ -121,3 +121,17 @@ def _datasets_for_publisher(publisher, count):
         results.append((k,v['views'],v['visits']))
 
     return sorted(results, key=operator.itemgetter(1), reverse=True)
+
+def month_option_title(month_iso, months, day):
+    month_isos = [ iso_code for (iso_code,name) in months ]
+    try:
+        index = month_isos.index(month_iso)
+    except ValueError:
+        _log.error('Month "%s" not found in list of months.' % month_iso)
+        return month_iso
+    month_name = months[index][1]
+    if index==0:
+        return month_name + (' (up to %s)'%day)
+    return month_name
+
+

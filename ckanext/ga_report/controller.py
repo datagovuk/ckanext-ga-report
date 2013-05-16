@@ -212,12 +212,9 @@ class GaReport(BaseController):
             for stat in graph_query:
                 graph_dict[ stat.key ] = graph_dict.get(stat.key,{
                     'name':stat.key, 
-                    'data': []
+                    'raw': {}
                     })
-                graph_dict[ stat.key ]['data'].append({
-                    'x':_get_unix_epoch(stat.period_name),
-                    'y':float(stat.value)
-                    })
+                graph_dict[ stat.key ]['raw'][stat.period_name] = float(stat.value)
             stats_in_table = [x[0] for x in entries]
             stats_not_in_table = set(graph_dict.keys()) - set(stats_in_table)
             stats = stats_in_table + sorted(list(stats_not_in_table))
@@ -252,7 +249,7 @@ class GaDatasetReport(BaseController):
         writer = csv.writer(response)
         writer.writerow(["Publisher Title", "Publisher Name", "Views", "Visits", "Period Name"])
 
-        top_publishers, top_publishers_graph = _get_top_publishers(None)
+        top_publishers = _get_top_publishers(limit=None)
 
         for publisher,view,visit in top_publishers:
             writer.writerow([publisher.title.encode('utf-8'),
@@ -274,7 +271,7 @@ class GaDatasetReport(BaseController):
             if not c.publisher:
                 abort(404, 'A publisher with that name could not be found')
 
-        packages = self._get_packages(c.publisher)
+        packages = self._get_packages(publisher=c.publisher, month=c.month)
         response.headers['Content-Type'] = "text/csv; charset=utf-8"
         response.headers['Content-Disposition'] = \
             str('attachment; filename=datasets_%s_%s.csv' % (c.publisher_name, month,))
@@ -303,15 +300,16 @@ class GaDatasetReport(BaseController):
         if c.month:
             c.month_desc = ''.join([m[1] for m in c.months if m[0]==c.month])
 
-        c.top_publishers, graph_data = _get_top_publishers()
+        c.top_publishers = _get_top_publishers()
+        graph_data = _get_top_publishers_graph()
         c.top_publishers_graph = json.dumps( _to_rickshaw(graph_data) )
 
         return render('ga_report/publisher/index.html')
 
-    def _get_packages(self, publisher=None, count=-1):
+    def _get_packages(self, publisher=None, month='', count=-1):
         '''Returns the datasets in order of views'''
         have_download_data = True
-        month = c.month or 'All'
+        month = month or 'All'
         if month != 'All':
             have_download_data = month >= DOWNLOADS_AVAILABLE_FROM
 
@@ -388,28 +386,25 @@ class GaDatasetReport(BaseController):
         entry = q.filter(GA_Url.period_name==c.month).first()
         c.publisher_page_views = entry.pageviews if entry else 0
 
-        c.top_packages = self._get_packages(c.publisher, 20)
+        c.top_packages = self._get_packages(publisher=c.publisher, count=20, month=c.month)
 
         # Graph query
-        top_package_names = [ x[0].name for x in c.top_packages ]
+        top_packages_all_time = self._get_packages(publisher=c.publisher, count=20, month='All')
+        top_package_names = [ x[0].name for x in top_packages_all_time ]
         graph_query = model.Session.query(GA_Url,model.Package)\
             .filter(model.Package.name==GA_Url.package_id)\
             .filter(GA_Url.url.like('/dataset/%'))\
             .filter(GA_Url.package_id.in_(top_package_names))
-        graph_dict = {}
+        all_series = {}
         for entry,package in graph_query:
             if not package: continue
             if entry.period_name=='All': continue
-            graph_dict[package.name] = graph_dict.get(package.name,{
+            all_series[package.name] = all_series.get(package.name,{
                 'name':package.title,
-                'data':[]
+                'raw': {}
                 })
-            graph_dict[package.name]['data'].append({
-                'x':_get_unix_epoch(entry.period_name),
-                'y':int(entry.pageviews),
-                })
-        graph = [ graph_dict[x] for x in top_package_names ]
-
+            all_series[package.name]['raw'][entry.period_name] = int(entry.pageviews)
+        graph = [ all_series[series_name] for series_name in top_package_names ]
         c.graph_data = json.dumps( _to_rickshaw(graph) )
 
         return render('ga_report/publisher/read.html')
@@ -417,53 +412,45 @@ class GaDatasetReport(BaseController):
 def _to_rickshaw(data, percentageMode=False):
     if data==[]:
         return data
-    # Create a consistent x-axis between all series
-    num_points = [ len(series['data']) for series in data ]
-    ideal_index = num_points.index( max(num_points) )
-    x_axis = []
+    # x-axis is every month in c.months. Note that data might not exist 
+    # for entire history, eg. for recently-added datasets
+    x_axis = [x[0] for x in c.months]
+    x_axis.reverse() # Ascending order
+    x_axis = x_axis[:-1] # Remove latest month
+    totals = {}
     for series in data:
+        series['data'] = []
+        for x_string in x_axis:
+            x = _get_unix_epoch( x_string )
+            y = series['raw'].get(x_string,0)
+            series['data'].append({'x':x,'y':y})
+            totals[x] = totals.get(x,0)+y
+    if not percentageMode:
+        return data
+    # Turn all data into percentages
+    # Roll insignificant series into a catch-all
+    THRESHOLD = 1
+    raw_data = data
+    data = []
+    for series in raw_data:
         for point in series['data']:
-            x_axis.append(point['x'])
-    x_axis = sorted( list( set(x_axis) ) )
-    # Zero pad any missing values
-    for series in data:
-        xs = [ point['x'] for point in series['data'] ]
-        for x in set(x_axis).difference(set(xs)):
-            series['data'].append( {'x':x, 'y':0} )
-    if percentageMode:
-        def get_totals(series_list):
-            totals = {}
-            for series in series_list:
-                for point in series['data']:
-                    totals[point['x']] = totals.get(point['x'],0) + point['y']
-            return totals
-        # Transform data into percentage stacks
-        totals = get_totals(data)
-        # Roll insignificant series into a catch-all
-        THRESHOLD = 0.01
-        raw_data = data
-        data = []
-        for series in raw_data:
-            for point in series['data']:
-                fraction = float(point['y']) / totals[point['x']]
-                if not (series in data) and fraction>THRESHOLD:
-                    data.append(series)
-        # Overwrite data with a set of interesting series
-        others = [ x for x in raw_data if not (x in data) ]
-        if len(others):
-            data.append({ 
-                'name':'Other',
-                'data': [ {'x':x,'y':y} for x,y in get_totals(others).items() ] 
-                })
-        # Turn each point into a percentage
-        for series in data:
-            for point in series['data']:
-                point['y'] = (point['y']*100) / totals[point['x']]
-    # Sort the points
-    for series in data:
-        series['data'] = sorted( series['data'], key=lambda x:x['x'] )
-        # Strip the latest month's incomplete analytics
-        series['data'] = series['data'][:-1]
+            percentage = (100*float(point['y'])) / totals[point['x']]
+            if not (series in data) and percentage>THRESHOLD:
+                data.append(series)
+            point['y'] = percentage
+    others = [ x for x in raw_data if not (x in data) ]
+    if len(others):
+        data_other = []
+        for i in range(len(x_axis)):
+            x = _get_unix_epoch(x_axis[i])
+            y = 0
+            for series in others: 
+                y += series['data'][i]['y']
+            data_other.append({'x':x,'y':y})
+        data.append({ 
+            'name':'Other',
+            'data': data_other
+            })
     return data
 
 
@@ -488,39 +475,51 @@ def _get_top_publishers(limit=20):
 
     top_publishers = []
     res = connection.execute(q, month)
-    department_ids = []
     for row in res:
         g = model.Group.get(row[0])
         if g:
-            department_ids.append(row[0])
             top_publishers.append((g, row[1], row[2]))
+    return top_publishers
 
-    graph = []
-    if limit is not None:
-        # Query for a history graph of these publishers
-        q = model.Session.query(
-                GA_Url.department_id, 
-                GA_Url.period_name, 
-                func.sum(cast(GA_Url.pageviews,sqlalchemy.types.INT)))\
-            .filter( GA_Url.department_id.in_(department_ids) )\
-            .filter( GA_Url.period_name!='All' )\
-            .filter( GA_Url.url.like('/dataset/%') )\
-            .filter( GA_Url.package_id!='' )\
-            .group_by( GA_Url.department_id, GA_Url.period_name )
-        graph_dict = {}
-        for dept_id,period_name,views in q:
-            graph_dict[dept_id] = graph_dict.get( dept_id, {
-                'name' : model.Group.get(dept_id).title,
-                'data' : []
-                })
-            graph_dict[dept_id]['data'].append({
-                'x': _get_unix_epoch(period_name),
-                'y': views
-                })
-        # Sort dict into ordered list
-        for id in department_ids:
-            graph.append( graph_dict[id] )
-    return top_publishers, graph
+
+def _get_top_publishers_graph(limit=20):
+    '''
+    Returns a list of the top 20 publishers by dataset visits.
+    (The number to show can be varied with 'limit')
+    '''
+    connection = model.Session.connection()
+    q = """
+        select department_id, sum(pageviews::int) views
+        from ga_url
+        where department_id <> ''
+          and package_id <> ''
+          and url like '/dataset/%%'
+          and period_name='All'
+        group by department_id order by views desc
+        """
+    if limit:
+        q = q + " limit %s;" % (limit)
+
+    res = connection.execute(q)
+    department_ids = [ row[0] for row in res ]
+
+    # Query for a history graph of these department ids
+    q = model.Session.query(
+            GA_Url.department_id, 
+            GA_Url.period_name, 
+            func.sum(cast(GA_Url.pageviews,sqlalchemy.types.INT)))\
+        .filter( GA_Url.department_id.in_(department_ids) )\
+        .filter( GA_Url.url.like('/dataset/%') )\
+        .filter( GA_Url.package_id!='' )\
+        .group_by( GA_Url.department_id, GA_Url.period_name )
+    graph_dict = {}
+    for dept_id,period_name,views in q:
+        graph_dict[dept_id] = graph_dict.get( dept_id, {
+            'name' : model.Group.get(dept_id).title,
+            'raw' : {}
+            })
+        graph_dict[dept_id]['raw'][period_name] = views
+    return [ graph_dict[id] for id in department_ids ]
 
 
 def _get_publishers():

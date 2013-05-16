@@ -4,14 +4,22 @@ CKAN.GA_Reports = {};
 CKAN.GA_Reports.render_rickshaw = function( css_name, data, mode, colorscheme ) {
     var graphLegends = $('#graph-legend-container');
 
-    if (!Modernizr.svg) {
+    function renderError(alertClass,alertText,legendText) {
         $("#chart_"+css_name)
-          .html( '<div class="alert">Your browser does not support vector graphics. No graphs can be rendered.</div>')
+          .html( '<div class="alert '+alertClass+'">'+alertText+'</div>')
           .closest('.rickshaw_chart_container').css('height',50);
         var myLegend = $('<div id="legend_'+css_name+'"/>')
-          .html('(Graph cannot be rendered)')
+          .html(legendText)
           .appendTo(graphLegends);
+    }
+
+    if (!Modernizr.svg) {
+        renderError('','Your browser does not support vector graphics. No graphs can be rendered.','(Graph cannot be rendered)');
         return;
+    }
+    if (data.length==0) {
+        renderError('alert-info','There is not enough data to render a graph.','(No graph available)');
+        return
     }
     var myLegend = $('<div id="legend_'+css_name+'"/>').appendTo(graphLegends);
 
@@ -30,7 +38,9 @@ CKAN.GA_Reports.render_rickshaw = function( css_name, data, mode, colorscheme ) 
         series: data ,
         height: 328
     });
-    var x_axis = new Rickshaw.Graph.Axis.Time( { graph: graph } );
+    var x_axis = new Rickshaw.Graph.Axis.Time( { 
+        graph: graph 
+    } );
     var y_axis = new Rickshaw.Graph.Axis.Y( {
         graph: graph,
         orientation: 'left',

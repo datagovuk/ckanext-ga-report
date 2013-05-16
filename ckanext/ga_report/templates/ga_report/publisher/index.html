@@ -30,9 +30,11 @@
     <div class="boxed">
 
        ${rickshaw_graph(c.top_publishers_graph,'publishers')}
+
+       <hr/>
        <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}" method="get">
           <div class="controls">
-            <label>Show stats table for:</label>
+            <h4 class="ga-reports-heading">Statistics for</h4>
             ${month_selector(c.month, c.months, c.day)}
           </div>
        </form>
