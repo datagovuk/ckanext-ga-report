@@ -11,8 +11,8 @@
     ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv_downloads',month=c.month or 'all'))}
   </py:match>
 
+  <py:def function="page_heading">Downloads ${usage_nav('Downloads')}</py:def>
   <div py:match="content">
-      <h1>Downloads ${usage_nav('Downloads')}</h1>
 
     <div class="boxed">
 
