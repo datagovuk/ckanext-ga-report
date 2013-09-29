@@ -1,6 +1,7 @@
 import os
 import logging
 import datetime
+import httplib
 import collections
 from pylons import config
 from ga_model import _normalize_url
@@ -178,15 +179,20 @@ class DownloadAnalytics(object):
 
         # Supported query params at
         # https://developers.google.com/analytics/devguides/reporting/core/v3/reference
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 filters=query,
-                                 start_date=start_date,
-                                 metrics=metrics,
-                                 sort=sort,
-                                 dimensions="ga:pagePath",
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+        try:
+            results = self.service.data().ga().get(
+                                     ids='ga:' + self.profile_id,
+                                     filters=query,
+                                     start_date=start_date,
+                                     metrics=metrics,
+                                     sort=sort,
+                                     dimensions="ga:pagePath",
+                                     max_results=10000,
+                                     end_date=end_date).execute()
+        except httplib.BadStatusLine:
+            log.error(u"Failed to download data=> ids: ga:{0}, filters: {1}, start_date: {2}, end_date: {3}, metrics: {4}, sort: {5}, dimensions: ga:pagePath".format(
+                self.profile_id, query, start_date, end_date, metrics, sort ))
+            return dict(url=[])
 
         packages = []
         log.info("There are %d results" % results['totalResults'])

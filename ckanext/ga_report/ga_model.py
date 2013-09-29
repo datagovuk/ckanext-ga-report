@@ -381,11 +381,8 @@ def get_top_level():
            order_by(model.Group.name).all()
 
 def get_children(publisher):
-    '''Finds child publishers for the given publisher (object). (Not recursive)'''
-    from ckan.model.group import HIERARCHY_CTE
-    return model.Session.query(model.Group).\
-           from_statement(HIERARCHY_CTE).params(id=publisher.id, type='publisher').\
-           all()
+    '''Finds child publishers for the given publisher (object). (Not recursive i.e. returns one level)'''
+    return publisher.get_children_groups(type='organization')
 
 def go_down_tree(publisher):
     '''Provided with a publisher object, it walks down the hierarchy and yields each publisher,
