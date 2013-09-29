@@ -19,9 +19,9 @@
     <script type="text/javascript" src="/scripts/vendor/rickshaw.min.js"></script>
   </py:def>
 
-  <py:match path="primarysidebar">
+  <py:def function="sidebar">
     ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month or 'all'))}
-  </py:match>
+  </py:def>
 
   <py:def function="page_heading">Site Usage ${usage_nav('Site-wide')}</py:def>
 

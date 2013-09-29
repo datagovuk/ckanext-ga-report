@@ -8,9 +8,9 @@
   <py:def function="page_title">Usage by Publisher</py:def>
 
 
-  <py:match path="primarysidebar">
+  <py:def path="sidebar">
     ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publisher_csv',month=c.month or 'all'))}
-  </py:match>
+  </py:def>
 
   <py:def function="optional_head">
     <link rel="stylesheet" type="text/css" href="/scripts/vendor/rickshaw.min.css"/>
