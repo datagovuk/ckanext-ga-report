@@ -9,10 +9,6 @@ import ga_model
 
 #from ga_client import GA
 
-import logging
-logger.setLevel(logging.DEBUG)
-
-
 log = logging.getLogger('ckanext.ga-report')
 
 FORMAT_MONTH = '%Y-%m'
