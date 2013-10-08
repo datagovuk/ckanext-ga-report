@@ -531,7 +531,7 @@ def _get_publishers():
     '''
     publishers = []
     for pub in model.Session.query(model.Group).\
-               filter(model.Group.type=='publisher').\
+               filter(model.Group.type=='organization').\
                filter(model.Group.state=='active').\
                order_by(model.Group.name):
         publishers.append((pub.name, pub.title))
