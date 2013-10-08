@@ -71,7 +71,7 @@ def single_popular_dataset(top=20):
 def single_popular_dataset_html(top=20):
     dataset_dict = single_popular_dataset(top)
     groups = package.get('groups', [])
-    publishers = [ g for g in groups if g.get('type') == 'publisher' ]
+    publishers = [ g for g in groups if g.get('type') == 'organization' ]
     publisher = publishers[0] if publishers else {'name':'', 'title': ''}
     context = {
         'dataset': dataset_dict,
@@ -118,7 +118,7 @@ def _datasets_for_publisher(publisher, count):
 
             if not p in datasets:
                 datasets[p] = {'views':0, 'visits': 0}
-                
+
             datasets[p]['views'] = datasets[p]['views'] + int(entry.pageviews)
             datasets[p]['visits'] = datasets[p]['visits'] + int(entry.visits)
 

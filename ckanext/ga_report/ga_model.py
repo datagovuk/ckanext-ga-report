@@ -125,7 +125,7 @@ def _get_package_and_publisher(url):
         dataset_ref = dataset_match.groups()[0]
         dataset = model.Package.get(dataset_ref)
         if dataset:
-            publisher_groups = dataset.get_groups('publisher')
+            publisher_groups = dataset.get_groups('organization')
             if publisher_groups:
                 return dataset_ref,publisher_groups[0].name
         return dataset_ref, None
@@ -323,11 +323,11 @@ def update_publisher_stats(period_name):
     """
     toplevel = get_top_level()
     publishers = model.Session.query(model.Group).\
-        filter(model.Group.type=='publisher').\
+        filter(model.Group.type=='organization').\
         filter(model.Group.state=='active').all()
     for publisher in publishers:
         views, visits, subpub = update_publisher(period_name, publisher, publisher.name)
-        parent, parents = '', publisher.get_groups('publisher')
+        parent, parents = '', publisher.get_groups('organization')
         if parents:
             parent = parents[0].name
         item = model.Session.query(GA_Publisher).\
@@ -377,7 +377,7 @@ def get_top_level():
                      model.Member.table_name == 'group' and \
                      model.Member.state == 'active').\
            filter(model.Member.id==None).\
-           filter(model.Group.type=='publisher').\
+           filter(model.Group.type=='organization').\
            order_by(model.Group.name).all()
 
 def get_children(publisher):
