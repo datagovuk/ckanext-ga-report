@@ -115,6 +115,7 @@ class LoadAnalytics(CkanCommand):
                                default=False,
                                dest='skip_url_stats',
                                help='Skip the download of URL data - just do site-wide stats')
+        self.token = ""
 
     def command(self):
         self._load_config()
@@ -129,14 +130,14 @@ class LoadAnalytics(CkanCommand):
             return
 
         try:
-            svc = init_service(ga_token_filepath, None)
+            self.token, svc = init_service(ga_token_filepath, None)
         except TypeError:
             print ('Have you correctly run the getauthtoken task and '
                    'specified the correct token file in the CKAN config under '
                    '"googleanalytics.token.filepath"?')
             return
 
-        downloader = DownloadAnalytics(svc, profile_id=get_profile_id(svc),
+        downloader = DownloadAnalytics(svc, self.token, profile_id=get_profile_id(svc),
                                        delete_first=self.options.delete_first,
                                        skip_url_stats=self.options.skip_url_stats)
 

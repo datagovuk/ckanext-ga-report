@@ -62,13 +62,10 @@
   <span class="subheading">
     <img src="/images/arrow-down-right.png" />
     <a class="${if_(active_name=='Site-wide','active')}" href="${h.url_for(controller='ckanext.ga_report.controller:GaReport',action='index')}${if_(c.month,'?month='+c.month)}">Site-wide</a>
-    <!--!
-    Temporarily disabled for production whilst we get to the bottom of #854
     <span class="divider">|</span>
     <a class="${if_(active_name=='Publishers','active')}" href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publishers')}${if_(c.month,'?month='+c.month)}">Publishers</a>
     <span class="divider">|</span>
     <a class="${if_(active_name=='Datasets','active')}" href="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}${if_(c.month,'?month='+c.month)}">Datasets</a>
-    -->
   </span>
 </div>
 

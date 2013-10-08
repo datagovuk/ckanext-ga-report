@@ -211,7 +211,7 @@ class GaReport(BaseController):
             graph_dict = {}
             for stat in graph_query:
                 graph_dict[ stat.key ] = graph_dict.get(stat.key,{
-                    'name':stat.key, 
+                    'name':stat.key,
                     'raw': {}
                     })
                 graph_dict[ stat.key ]['raw'][stat.period_name] = float(stat.value)
@@ -304,7 +304,9 @@ class GaDatasetReport(BaseController):
         graph_data = _get_top_publishers_graph()
         c.top_publishers_graph = json.dumps( _to_rickshaw(graph_data) )
 
-        return render('ga_report/publisher/index.html')
+        x =  render('ga_report/publisher/index.html')
+
+        return x
 
     def _get_packages(self, publisher=None, month='', count=-1):
         '''Returns the datasets in order of views'''
@@ -412,7 +414,7 @@ class GaDatasetReport(BaseController):
 def _to_rickshaw(data, percentageMode=False):
     if data==[]:
         return data
-    # x-axis is every month in c.months. Note that data might not exist 
+    # x-axis is every month in c.months. Note that data might not exist
     # for entire history, eg. for recently-added datasets
     x_axis = [x[0] for x in c.months]
     x_axis.reverse() # Ascending order
@@ -444,10 +446,10 @@ def _to_rickshaw(data, percentageMode=False):
         for i in range(len(x_axis)):
             x = _get_unix_epoch(x_axis[i])
             y = 0
-            for series in others: 
+            for series in others:
                 y += series['data'][i]['y']
             data_other.append({'x':x,'y':y})
-        data.append({ 
+        data.append({
             'name':'Other',
             'data': data_other
             })
@@ -505,8 +507,8 @@ def _get_top_publishers_graph(limit=20):
 
     # Query for a history graph of these department ids
     q = model.Session.query(
-            GA_Url.department_id, 
-            GA_Url.period_name, 
+            GA_Url.department_id,
+            GA_Url.period_name,
             func.sum(cast(GA_Url.pageviews,sqlalchemy.types.INT)))\
         .filter( GA_Url.department_id.in_(department_ids) )\
         .filter( GA_Url.url.like('/dataset/%') )\

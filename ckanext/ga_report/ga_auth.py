@@ -36,7 +36,7 @@ def init_service(token_file, credentials_file):
     credentials = _prepare_credentials(token_file, credentials_file)
     http = credentials.authorize(http)  # authorize the http object
 
-    return build('analytics', 'v3', http=http)
+    return credentials.access_token, build('analytics', 'v3', http=http)
 
 
 def get_profile_id(service):

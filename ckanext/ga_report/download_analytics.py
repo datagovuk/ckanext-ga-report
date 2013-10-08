@@ -3,6 +3,8 @@ import logging
 import datetime
 import httplib
 import collections
+import requests
+import json
 from pylons import config
 from ga_model import _normalize_url
 import ga_model
@@ -19,13 +21,14 @@ MIN_DOWNLOADS = 10
 class DownloadAnalytics(object):
     '''Downloads and stores analytics info'''
 
-    def __init__(self, service=None, profile_id=None, delete_first=False,
+    def __init__(self, service=None, token=None, profile_id=None, delete_first=False,
                  skip_url_stats=False):
         self.period = config['ga-report.period']
         self.service = service
         self.profile_id = profile_id
         self.delete_first = delete_first
         self.skip_url_stats = skip_url_stats
+        self.token = token
 
     def specific_month(self, date):
         import calendar
@@ -150,17 +153,27 @@ class DownloadAnalytics(object):
         metrics = 'ga:entrances'
         sort = '-ga:entrances'
 
-        # Supported query params at
-        # https://developers.google.com/analytics/devguides/reporting/core/v3/reference
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 filters=query,
-                                 start_date=start_date,
-                                 metrics=metrics,
-                                 sort=sort,
-                                 dimensions="ga:landingPagePath,ga:socialNetwork",
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = dict(ids='ga:' + self.profile_id,
+                       filters=query,
+                       metrics=metrics,
+                       sort=sort,
+                       dimensions="ga:landingPagePath,ga:socialNetwork",
+                       max_results=10000)
+
+            args['start-date'] = start_date
+            args['end-date'] = end_date
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
+
         data = collections.defaultdict(list)
         rows = results.get('rows',[])
         for row in rows:
@@ -180,19 +193,31 @@ class DownloadAnalytics(object):
         # Supported query params at
         # https://developers.google.com/analytics/devguides/reporting/core/v3/reference
         try:
-            results = self.service.data().ga().get(
-                                     ids='ga:' + self.profile_id,
-                                     filters=query,
-                                     start_date=start_date,
-                                     metrics=metrics,
-                                     sort=sort,
-                                     dimensions="ga:pagePath",
-                                     max_results=10000,
-                                     end_date=end_date).execute()
-        except httplib.BadStatusLine:
-            log.error(u"Failed to download data=> ids: ga:{0}, filters: {1}, start_date: {2}, end_date: {3}, metrics: {4}, sort: {5}, dimensions: ga:pagePath".format(
-                self.profile_id, query, start_date, end_date, metrics, sort ))
-            return dict(url=[])
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = {}
+            args["sort"] = "-ga:pageviews"
+            args["max-results"] = 100000
+            args["dimensions"] = "ga:pagePath"
+            args["start-date"] = start_date
+            args["end-date"] = end_date
+            args["metrics"] = metrics
+            args["ids"] = "ga:" + self.profile_id
+            args["filters"] = query
+            args["alt"] = "json"
+
+            r = requests.get("https://www.googleapis.com/analytics/v3/data/ga", params=args, headers=headers)
+            if r.status_code != 200:
+              raise Exception("Request with params: %s failed" % args)
+
+            results = json.loads(r.content)
+            print len(results.keys())
+        except Exception, e:
+            log.exception(e)
+            #return dict(url=[])
+            raise e
 
         packages = []
         log.info("There are %d results" % results['totalResults'])
@@ -232,25 +257,83 @@ class DownloadAnalytics(object):
             data[key] = data.get(key,0) + result[1]
         return data
 
+    def _get_json(self, params, prev_fail=False):
+        if prev_fail:
+          import os
+          ga_token_filepath = os.path.expanduser(config.get('googleanalytics.token.filepath', ''))
+          if not ga_token_filepath:
+              print 'ERROR: In the CKAN config you need to specify the filepath of the ' \
+                    'Google Analytics token file under key: googleanalytics.token.filepath'
+              return
+
+          try:
+              self.token, svc = init_service(ga_token_filepath, None)
+          except TypeError:
+              print ('Have you correctly run the getauthtoken task and '
+                     'specified the correct token file in the CKAN config under '
+                     '"googleanalytics.token.filepath"?')
+
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+            r = requests.get("https://www.googleapis.com/analytics/v3/data/ga", params=params, headers=headers)
+            if r.status_code != 200:
+              log.info("STATUS: %s" % (r.status_code,))
+              log.info("CONTENT: %s" % (r.content,))
+              raise Exception("Request with params: %s failed" % params)
+
+            return json.loads(r.content)
+        except Exception, e:
+            if not prev_fail:
+              print e
+              results = self._get_json(self, params, prev_fail=True)
+            else:
+              log.exception(e)
+
+        return dict(url=[])
+
     def _totals_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Fetches distinct totals, total pageviews etc """
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 start_date=start_date,
-                                 metrics='ga:pageviews',
-                                 sort='-ga:pageviews',
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+        try:
+            args = {}
+            args["max-results"] = 100000
+            args["start-date"] = start_date
+            args["end-date"] = end_date
+            args["ids"] = "ga:" + self.profile_id
+
+            args["metrics"] = "ga:pageviews"
+            args["sort"] = "-ga:pageviews"
+            args["alt"] = "json"
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
         result_data = results.get('rows')
         ga_model.update_sitewide_stats(period_name, "Totals", {'Total page views': result_data[0][0]},
             period_complete_day)
 
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 start_date=start_date,
-                                 metrics='ga:pageviewsPerVisit,ga:avgTimeOnSite,ga:percentNewVisits,ga:visits',
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = {}
+            args["max-results"] = 100000
+            args["start-date"] = start_date
+            args["end-date"] = end_date
+            args["ids"] = "ga:" + self.profile_id
+
+            args["metrics"] = "ga:pageviewsPerVisit,ga:avgTimeOnSite,ga:percentNewVisits,ga:visits"
+            args["alt"] = "json"
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
         result_data = results.get('rows')
         data = {
             'Pages per visit': result_data[0][0],
@@ -263,14 +346,28 @@ class DownloadAnalytics(object):
         # Bounces from / or another configurable page.
         path = '/%s%s' % (config.get('googleanalytics.account'),
                           config.get('ga-report.bounce_url', '/'))
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 filters='ga:pagePath==%s' % (path,),
-                                 start_date=start_date,
-                                 metrics='ga:visitBounceRate',
-                                 dimensions='ga:pagePath',
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = {}
+            args["max-results"] = 100000
+            args["start-date"] = start_date
+            args["end-date"] = end_date
+            args["ids"] = "ga:" + self.profile_id
+
+            args["filters"] = 'ga:pagePath==%s' % (path,)
+            args["dimensions"] = 'ga:pagePath'
+            args["metrics"] = "ga:visitBounceRate"
+            args["alt"] = "json"
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
         result_data = results.get('rows')
         if not result_data or len(result_data) != 1:
             log.error('Could not pinpoint the bounces for path: %s. Got results: %r',
@@ -286,14 +383,28 @@ class DownloadAnalytics(object):
 
     def _locale_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Fetches stats about language and country """
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 start_date=start_date,
-                                 metrics='ga:pageviews',
-                                 sort='-ga:pageviews',
-                                 dimensions="ga:language,ga:country",
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = {}
+            args["max-results"] = 100000
+            args["start-date"] = start_date
+            args["end-date"] = end_date
+            args["ids"] = "ga:" + self.profile_id
+
+            args["dimensions"] = "ga:language,ga:country"
+            args["metrics"] = "ga:pageviews"
+            args["sort"] = "-ga:pageviews"
+            args["alt"] = "json"
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
         result_data = results.get('rows')
         data = {}
         for result in result_data:
@@ -314,15 +425,27 @@ class DownloadAnalytics(object):
 
         data = {}
 
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 start_date=start_date,
-                                 filters='ga:eventAction==download',
-                                 metrics='ga:totalEvents',
-                                 sort='-ga:totalEvents',
-                                 dimensions="ga:eventLabel",
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = {}
+            args["max-results"] = 100000
+            args["start-date"] = start_date
+            args["end-date"] = end_date
+            args["ids"] = "ga:" + self.profile_id
+
+            args["filters"] = 'ga:eventAction==download'
+            args["dimensions"] = "ga:eventLabel"
+            args["metrics"] = "ga:totalEvents"
+            args["alt"] = "json"
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
         result_data = results.get('rows')
         if not result_data:
             # We may not have data for this time period, so we need to bail
@@ -361,15 +484,25 @@ class DownloadAnalytics(object):
         log.info('Associating downloads of resource URLs with their respective datasets')
         process_result_data(results.get('rows'))
 
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 start_date=start_date,
-                                 filters='ga:eventAction==download-cache',
-                                 metrics='ga:totalEvents',
-                                 sort='-ga:totalEvents',
-                                 dimensions="ga:eventLabel",
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = dict( ids='ga:' + self.profile_id,
+                         filters='ga:eventAction==download-cache',
+                         metrics='ga:totalEvents',
+                         sort='-ga:totalEvents',
+                         dimensions="ga:eventLabel",
+                         max_results=10000)
+            args['start-date'] = start_date
+            args['end-date'] = end_date
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
         log.info('Associating downloads of cache resource URLs with their respective datasets')
         process_result_data(results.get('rows'), cached=False)
 
@@ -378,14 +511,25 @@ class DownloadAnalytics(object):
 
     def _social_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Finds out which social sites people are referred from """
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 start_date=start_date,
-                                 metrics='ga:pageviews',
-                                 sort='-ga:pageviews',
-                                 dimensions="ga:socialNetwork,ga:referralPath",
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = dict( ids='ga:' + self.profile_id,
+                         metrics='ga:pageviews',
+                         sort='-ga:pageviews',
+                         dimensions="ga:socialNetwork,ga:referralPath",
+                         max_results=10000)
+            args['start-date'] = start_date
+            args['end-date'] = end_date
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
         result_data = results.get('rows')
         data = {}
         for result in result_data:
@@ -397,14 +541,24 @@ class DownloadAnalytics(object):
 
     def _os_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Operating system stats """
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 start_date=start_date,
-                                 metrics='ga:pageviews',
-                                 sort='-ga:pageviews',
-                                 dimensions="ga:operatingSystem,ga:operatingSystemVersion",
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = dict( ids='ga:' + self.profile_id,
+                         metrics='ga:pageviews',
+                         sort='-ga:pageviews',
+                         dimensions="ga:operatingSystem,ga:operatingSystemVersion",
+                         max_results=10000)
+            args['start-date'] = start_date
+            args['end-date'] = end_date
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
         result_data = results.get('rows')
         data = {}
         for result in result_data:
@@ -422,14 +576,27 @@ class DownloadAnalytics(object):
 
     def _browser_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Information about browsers and browser versions """
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 start_date=start_date,
-                                 metrics='ga:pageviews',
-                                 sort='-ga:pageviews',
-                                 dimensions="ga:browser,ga:browserVersion",
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = dict( ids='ga:' + self.profile_id,
+                         metrics='ga:pageviews',
+                         sort='-ga:pageviews',
+                         dimensions="ga:browser,ga:browserVersion",
+                         max_results=10000)
+
+            args['start-date'] = start_date
+            args['end-date'] = end_date
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
+
         result_data = results.get('rows')
         # e.g. [u'Firefox', u'19.0', u'20']
 
@@ -471,14 +638,24 @@ class DownloadAnalytics(object):
     def _mobile_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Info about mobile devices """
 
-        results = self.service.data().ga().get(
-                                 ids='ga:' + self.profile_id,
-                                 start_date=start_date,
-                                 metrics='ga:pageviews',
-                                 sort='-ga:pageviews',
-                                 dimensions="ga:mobileDeviceBranding, ga:mobileDeviceInfo",
-                                 max_results=10000,
-                                 end_date=end_date).execute()
+        try:
+            # Because of issues of invalid responses, we are going to make these requests
+            # ourselves.
+            headers = {'authorization': 'Bearer ' + self.token}
+
+            args = dict( ids='ga:' + self.profile_id,
+                         metrics='ga:pageviews',
+                         sort='-ga:pageviews',
+                         dimensions="ga:mobileDeviceBranding, ga:mobileDeviceInfo",
+                         max_results=10000)
+            args['start-date'] = start_date
+            args['end-date'] = end_date
+
+            results = self._get_json(args)
+        except Exception, e:
+            log.exception(e)
+            results = dict(url=[])
+
 
         result_data = results.get('rows')
         data = {}
