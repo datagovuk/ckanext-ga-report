@@ -262,7 +262,7 @@ class DownloadAnalytics(object):
         if not ga_token_filepath:
             print 'ERROR: In the CKAN config you need to specify the filepath of the ' \
                 'Google Analytics token file under key: googleanalytics.token.filepath'
-        return
+            return
 
         try:
             log.info("Trying to refresh our OAuth token")
