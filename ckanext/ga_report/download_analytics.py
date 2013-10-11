@@ -268,7 +268,7 @@ class DownloadAnalytics(object):
             log.info("Trying to refresh our OAuth token")
             self.token, svc = init_service(ga_token_filepath, None)
             log.info("OAuth token refreshed")
-        except Exception auth_exception:
+        except Exception, auth_exception:
             log.error("Oauth refresh failed")
             log.exception(auth_exception)
             return
