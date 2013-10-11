@@ -258,24 +258,22 @@ class DownloadAnalytics(object):
         return data
 
     def _get_json(self, params, prev_fail=False):
-        if prev_fail:
-          import os
-          ga_token_filepath = os.path.expanduser(config.get('googleanalytics.token.filepath', ''))
-          if not ga_token_filepath:
-              print 'ERROR: In the CKAN config you need to specify the filepath of the ' \
-                    'Google Analytics token file under key: googleanalytics.token.filepath'
-              return
-
-          try:
-              self.token, svc = init_service(ga_token_filepath, None)
-          except TypeError:
-              print ('Have you correctly run the getauthtoken task and '
-                     'specified the correct token file in the CKAN config under '
-                     '"googleanalytics.token.filepath"?')
+        ga_token_filepath = os.path.expanduser(config.get('googleanalytics.token.filepath', ''))
+        if not ga_token_filepath:
+            print 'ERROR: In the CKAN config you need to specify the filepath of the ' \
+                'Google Analytics token file under key: googleanalytics.token.filepath'
+        return
 
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
+            log.info("Trying to refresh our OAuth token")
+            self.token, svc = init_service(ga_token_filepath, None)
+            log.info("OAuth token refreshed")
+        except Exception auth_exception:
+            log.error("Oauth refresh failed")
+            log.exception(auth_exception)
+            return
+
+        try:
             headers = {'authorization': 'Bearer ' + self.token}
             r = requests.get("https://www.googleapis.com/analytics/v3/data/ga", params=params, headers=headers)
             if r.status_code != 200:
@@ -285,10 +283,6 @@ class DownloadAnalytics(object):
 
             return json.loads(r.content)
         except Exception, e:
-            if not prev_fail:
-              print e
-              results = self._get_json(self, params, prev_fail=True)
-            else:
               log.exception(e)
 
         return dict(url=[])
