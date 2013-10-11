@@ -264,8 +264,8 @@ class DownloadAnalytics(object):
                 'Google Analytics token file under key: googleanalytics.token.filepath'
             return
 
+        log.info("Trying to refresh our OAuth token")
         try:
-            log.info("Trying to refresh our OAuth token")
             self.token, svc = init_service(ga_token_filepath, None)
             log.info("OAuth token refreshed")
         except Exception, auth_exception:
@@ -277,9 +277,9 @@ class DownloadAnalytics(object):
             headers = {'authorization': 'Bearer ' + self.token}
             r = requests.get("https://www.googleapis.com/analytics/v3/data/ga", params=params, headers=headers)
             if r.status_code != 200:
-              log.info("STATUS: %s" % (r.status_code,))
-              log.info("CONTENT: %s" % (r.content,))
-              raise Exception("Request with params: %s failed" % params)
+                log.info("STATUS: %s" % (r.status_code,))
+                log.info("CONTENT: %s" % (r.content,))
+                raise Exception("Request with params: %s failed" % params)
 
             return json.loads(r.content)
         except Exception, e:
