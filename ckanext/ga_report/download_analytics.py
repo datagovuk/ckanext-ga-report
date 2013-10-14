@@ -193,10 +193,6 @@ class DownloadAnalytics(object):
         # Supported query params at
         # https://developers.google.com/analytics/devguides/reporting/core/v3/reference
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = {}
             args["sort"] = "-ga:pageviews"
             args["max-results"] = 100000
@@ -208,16 +204,11 @@ class DownloadAnalytics(object):
             args["filters"] = query
             args["alt"] = "json"
 
-            r = requests.get("https://www.googleapis.com/analytics/v3/data/ga", params=args, headers=headers)
-            if r.status_code != 200:
-              raise Exception("Request with params: %s failed" % args)
+            results = self._get_json(args)
 
-            results = json.loads(r.content)
-            print len(results.keys())
         except Exception, e:
             log.exception(e)
-            #return dict(url=[])
-            raise e
+            return dict(url=[])
 
         packages = []
         log.info("There are %d results" % results['totalResults'])
