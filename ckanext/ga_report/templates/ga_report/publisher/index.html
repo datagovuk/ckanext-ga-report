@@ -26,14 +26,21 @@
   </py:def>
 
  <py:match path="breadcrumbs">
-    <li><a href="/data/search">Datasets</a></li>
-    <li><a href="/data/site-usage">Site-usage</a></li>
+    <li><a href="/data/site-usage">Site Analytics</a></li>
     <li><a href="/data/site-usage/publisher">Publishers</a></li>
   </py:match>
 
 
 
   <div py:match="content">
+
+    <h3 style='text-align:center;'>
+      <a href="/data/site-usage">Site-wide</a>
+      <span style="color: #bbb;margin:10px;">|</span>
+      Publishers
+      <span style="color: #bbb;margin:10px;">|</span>
+      <a href="/data/site-usage/dataset">Datasets</a>
+    </h3>
 
 
     <div class="boxed">
