@@ -8,7 +8,6 @@
   <py:def function="page_title">Usage by Publisher</py:def>
 
 
-
   <py:def function="sidebar">
     ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='publisher_csv',month=c.month or 'all'))}
   </py:def>
@@ -25,7 +24,14 @@
     <script type="text/javascript" src="/scripts/vendor/d3.layout.min.js"></script>
     <script type="text/javascript" src="/scripts/vendor/rickshaw.min.js"></script>
   </py:def>
-  <py:def function="page_heading">Site Usage ${usage_nav('Publishers')}</py:def>
+
+ <py:match path="breadcrumbs">
+    <li><a href="/data/search">Datasets</a></li>
+    <li><a href="/data/site-usage">Site-usage</a></li>
+    <li><a href="/data/site-usage/publisher">Publishers</a></li>
+  </py:match>
+
+
 
   <div py:match="content">
 
