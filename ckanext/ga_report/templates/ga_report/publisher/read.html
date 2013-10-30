@@ -19,12 +19,27 @@
     <script type="text/javascript" src="/scripts/vendor/rickshaw.min.js"></script>
   </py:def>
 
-  <py:match path="primarysidebar">
+  <py:def function="sidebar">
     ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='dataset_csv',id=c.publisher_name or 'all',month=c.month or 'all'))}
+  </py:def>
+
+ <py:match path="breadcrumbs">
+    <li><a href="/data/site-usage">Site Analytics</a></li>
+    <li><a href="/data/site-usage/publisher">Datasets</a></li>
+    <li py:if="c.publisher"><a href="/data/site-usage/publisher/${c.publisher.name}">${c.publisher.title}</a></li>
   </py:match>
-  <py:def function="page_heading">Site Usage ${usage_nav('Datasets')}</py:def>
+
+
 
   <div py:match="content">
+    <h3 style='text-align:center;'>
+      <a href="/data/site-usage">Site-wide</a>
+      <span style="color: #bbb;margin:10px;">|</span>
+      <a href="/data/site-usage/publisher">Publishers</a>
+      <span style="color: #bbb;margin:10px;">|</span>
+      Datasets
+    </h3>
+
 
     <div class="boxed">
      <h3 py:if="c.publisher"><a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController',action='read',id=c.publisher.name)}">${c.publisher.title}</a></h3>

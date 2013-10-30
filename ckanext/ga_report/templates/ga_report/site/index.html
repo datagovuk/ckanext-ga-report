@@ -19,13 +19,26 @@
     <script type="text/javascript" src="/scripts/vendor/rickshaw.min.js"></script>
   </py:def>
 
-  <py:match path="primarysidebar">
+  <py:def function="sidebar">
     ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month or 'all'))}
+  </py:def>
+
+
+ <py:match path="breadcrumbs">
+    <li><a href="/data/site-usage">Site Analytics</a></li>
+    <li><a href="/data/site-usage">Site-wide</a></li>
   </py:match>
 
-  <py:def function="page_heading">Site Usage ${usage_nav('Site-wide')}</py:def>
 
   <div py:match="content">
+
+    <h3 style='text-align:center;'>
+      Site-wide
+      <span style="color: #bbb;margin:10px;">|</span>
+      <a href="/data/site-usage/publisher">Publishers</a>
+      <span style="color: #bbb;margin:10px;">|</span>
+      <a href="/data/site-usage/dataset">Datasets</a>
+    </h3>
 
     <div class="boxed">
     <div class="tabbable">

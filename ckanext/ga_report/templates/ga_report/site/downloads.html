@@ -7,9 +7,9 @@
 
   <py:def function="page_title">Downloads</py:def>
 
-  <py:match path="primarysidebar">
+  <py:def path="sidebar">
     ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv_downloads',month=c.month or 'all'))}
-  </py:match>
+  </py:def>
 
   <py:def function="page_heading">Downloads ${usage_nav('Downloads')}</py:def>
   <div py:match="content">
