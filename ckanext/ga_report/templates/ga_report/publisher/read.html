@@ -19,75 +19,86 @@
     <script type="text/javascript" src="/scripts/vendor/rickshaw.min.js"></script>
   </py:def>
 
-  <py:def function="sidebar">
-    ${ga_sidebar(download_link=h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='dataset_csv',id=c.publisher_name or 'all',month=c.month or 'all'))}
-  </py:def>
 
  <py:match path="breadcrumbs">
     <li><a href="/data/site-usage">Site Analytics</a></li>
-    <li><a href="/data/site-usage/publisher">Datasets</a></li>
-    <li py:if="c.publisher"><a href="/data/site-usage/publisher/${c.publisher.name}">${c.publisher.title}</a></li>
+    <py:if test="c.publisher">
+      <li><a href="/data/site-usage/publisher">Publishers</a></li>
+      <li py:if="c.publisher"><a href="/data/site-usage/publisher/${c.publisher.name}">${c.publisher.title}</a></li>
+    </py:if>
+    <py:if test="not c.publisher">
+      <li><a href="${request.url}">Usage By Dataset</a></li>
+    </py:if>
   </py:match>
 
-
-
   <div py:match="content">
-    <h3 style='text-align:center;'>
-      <a href="/data/site-usage">Site-wide</a>
-      <span style="color: #bbb;margin:10px;">|</span>
-      <a href="/data/site-usage/publisher">Publishers</a>
-      <span style="color: #bbb;margin:10px;">|</span>
-      Datasets
-    </h3>
 
+    <py:with vars="download_link=h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='dataset_csv',id=c.publisher_name or 'all',month=c.month or 'all')">
+      <a class="btn button btn-primary btn-sm pull-right" href="${download_link}"><i class="icon-download"></i>&nbsp; Download as CSV</a>
+    </py:with>
+    <h1>Site Usage</h1>
 
-    <div class="boxed">
-     <h3 py:if="c.publisher"><a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController',action='read',id=c.publisher.name)}">${c.publisher.title}</a></h3>
-
-     <py:if test="c.graph_data">
-       ${rickshaw_graph(c.graph_data,'dataset-downloads',debug=True)}
-     </py:if>
-     <form class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}" method="get">
-        <div class="controls">
-
-          ${month_selector(c.month, c.months, c.day)}
-
-          <select name="publisher">
-                <option value='' py:attrs="{'selected': 'selected' if not c.publisher else None}">All publishers</option>
-              <py:for each="val,desc in c.publishers">
-                <option value='${val}' py:attrs="{'selected': 'selected' if c.publisher_name == val else None}">${desc}</option>
-              </py:for>
-          </select>
-          <input class="btn button btn-primary" type='submit' value="Update"/>
+    <div class="row" style="background: #fff;">
+      <div class="col-md-4">
+        <div class="whitebox">
+          <strong>Graph Legend</strong>
+          <div id="graph-legend-container">
+            <div style="display: none;" id="legend_none">(No graph is loaded)</div>
+          </div>
         </div>
-     </form>
-     <py:if test="c.month">
-       <h4>Statistics for ${h.month_option_title(c.month,c.months,c.day)}:</h4>
-     </py:if>
-     <py:if test="not c.month">
-       <h4>Statistics for all months:</h4>
-     </py:if>
-     <div class="alert alert-info" py:if="not c.top_packages">No page views in this period.</div>
-     <py:if test="c.top_packages">
-       <table class="ga-reports-table table table-condensed table-bordered table-striped">
-         <tr>
-           <th>Dataset</th>
-           <th>Views</th>
-           <th>Downloads</th>
-         </tr>
-         <py:for each="package, views, visits,downloads in c.top_packages">
-           <tr>
-             <td>
-               ${h.link_to(package.title or package.name, h.url_for(controller='package', action='read', id=package.name))}
-             </td>
-             <td class="td-numeric">${views}</td>
-             <td class="td-numeric">${downloads}</td>
-          </tr>
-        </py:for>
-      </table>
-    </py:if>
+      </div>
+      <div class="col-md-8">
+        <div class="whitebox">
+          <strong py:if="c.publisher">Datasets From <a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController',action='read',id=c.publisher.name)}">${c.publisher.title}</a></strong>
+          <strong py:if="not c.publisher">All Datasets</strong>
+          <py:if test="c.graph_data">
+            ${rickshaw_graph(c.graph_data,'dataset-downloads',debug=True)}
+          </py:if>
+       </div>
+      </div>
+    </div>
+    <hr/>
+   <py:if test="c.month">
+     <h4>Statistics for ${h.month_option_title(c.month,c.months,c.day)}:</h4>
+   </py:if>
+   <py:if test="not c.month">
+     <h2>Statistics for all months</h2>
+   </py:if>
+   <form style="margin-bottom:10px;" class="form-inline" action="${h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='read')}" method="get">
+      <div class="controls">
 
-  </div>
+        ${month_selector(c.month, c.months, c.day)}
+
+        <select name="publisher">
+              <option value='' py:attrs="{'selected': 'selected' if not c.publisher else None}">All publishers</option>
+            <py:for each="val,desc in c.publishers">
+              <option value='${val}' py:attrs="{'selected': 'selected' if c.publisher_name == val else None}">${desc}</option>
+            </py:for>
+        </select>
+        <input class="btn button btn-primary btn-xs" type='submit' value="Update"/>
+      </div>
+   </form>
+   <div class="alert alert-info" py:if="not c.top_packages">No page views in this period.</div>
+   <py:if test="c.top_packages">
+     <table class="ga-reports-table table table-condensed table-bordered">
+       <tr>
+         <th>Dataset</th>
+         <th>Views</th>
+         <th>Downloads</th>
+       </tr>
+       <py:for each="package, views, visits,downloads in c.top_packages">
+         <tr>
+           <td>
+             ${h.link_to(package.title or package.name, h.url_for(controller='package', action='read', id=package.name))}
+           </td>
+           <td class="td-numeric">${views}</td>
+           <td class="td-numeric">${downloads}</td>
+        </tr>
+      </py:for>
+    </table>
+  </py:if>
+
+  ${ga_footer()}
 
   </div>
 
