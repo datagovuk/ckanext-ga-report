@@ -36,7 +36,10 @@
     <py:with vars="download_link=h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='dataset_csv',id=c.publisher_name or 'all',month=c.month or 'all')">
       <a class="btn button btn-primary btn-sm pull-right" href="${download_link}"><i class="icon-download"></i>&nbsp; Download as CSV</a>
     </py:with>
-    <h1>Site Usage</h1>
+    <h1>Site Usage
+        <small py:if="c.publisher">${c.publisher.title}</small>
+        <small py:if="not c.publisher">All datasets</small>
+    </h1>
 
     <div class="row" style="background: #fff;">
       <div class="col-md-4">
@@ -49,8 +52,6 @@
       </div>
       <div class="col-md-8">
         <div class="whitebox">
-          <strong py:if="c.publisher">Datasets From <a href="${h.url_for(controller='ckanext.dgu.controllers.publisher:PublisherController',action='read',id=c.publisher.name)}">${c.publisher.title}</a></strong>
-          <strong py:if="not c.publisher">All Datasets</strong>
           <py:if test="c.graph_data">
             ${rickshaw_graph(c.graph_data,'dataset-downloads',debug=True)}
           </py:if>
