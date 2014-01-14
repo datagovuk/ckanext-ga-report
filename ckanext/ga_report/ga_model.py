@@ -327,7 +327,7 @@ def update_publisher_stats(period_name):
         filter(model.Group.state=='active').all()
     for publisher in publishers:
         views, visits, subpub = update_publisher(period_name, publisher, publisher.name)
-        parent, parents = '', publisher.get_groups('organization')
+        parent, parents = '', publisher.get_parent_groups(type='organization')
         if parents:
             parent = parents[0].name
         item = model.Session.query(GA_Publisher).\
