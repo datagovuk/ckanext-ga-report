@@ -81,5 +81,10 @@ class GAReportPlugin(p.SingletonPlugin):
             controller='ckanext.ga_report.controller:GaDatasetReport',
             action='read_publisher'
         )
+        map.connect(
+            '/data/site-usage/d3',
+            controller='ckanext.ga_report.controller:GaReport',
+            action='d3'
+        )
         return map
 

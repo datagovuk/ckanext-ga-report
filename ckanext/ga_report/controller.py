@@ -59,6 +59,14 @@ def _month_details(cls, stat_key=None):
 
 class GaReport(BaseController):
 
+    # ==============
+    # In Development
+    # ==============
+    def d3(self):
+        c.viz_data = { 'ok':True }
+
+        return render('ga_report/ga_d3.html')
+
     def csv(self, month):
         import csv
 
