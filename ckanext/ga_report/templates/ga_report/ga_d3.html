@@ -14,40 +14,47 @@
     <!--[if lte IE 8]>
       <script type="text/javascript">
         $(function() {
-          $('.viz-body')
-          .css('padding','4px')
-          .html('<div class="alert alert-danger"><strong>The graphs below are static images and cannot be clicked</strong>. Your browser is out of date and cannot render dynamic content.</div>')
-          .append('<img src="/images/graph-ga-reports.png"/>');
+          $('#main-content .row:first')
+          .prepend('<div class="alert alert-danger"><strong>The graphs below are static images and cannot be clicked</strong>. Your browser is out of date and cannot render dynamic content.</div>');
+          $('#sib_container').html('<img src="/images/graph-investmentreadiness1.png" alt="(Interactive graphs not available)" />')
+          $('#icrf_container').html('<img src="/images/graph-investmentreadiness2.png" alt="(Interactive graphs not available)" />')
         });
       </script>
     <![endif]-->
-    <link rel="stylesheet" type="text/css" href="/css/ga_d3.min.css"/>
+    <link rel="stylesheet" type="text/css" href="/css/dgu-viz.min.css" />
+    <link rel="stylesheet" type="text/css" href="/css/ga_d3.min.css" />
     <script type="text/javascript" src="/scripts/vendor/d3.v3.min.js"></script>
+    <!--script type="text/javascript" src="/scripts/vendor/d3.sankey.min.js"></script-->
+    <script type="text/javascript" src="/scripts/dgu-viz-pack.min.js"></script>
     <script type="text/javascript" src="/scripts/ga_d3_pack.min.js"></script>
+    <script type="text/javascript">
+      $(function() { viz.loadGaReports(); })
+    </script>
   </py:def>
 
   <py:match path="content">
     <h1>Site Usage</h1>
     <div class="container">
       <div class="row">
-        <div class="whitebox" style="overflow: visible;">
-          <div class="viz-body">
-            <!--pre>
+        <div class="whitebox">
+          Hello world.
+          <!--pre>
 <?python from pprint import pformat ?>
 ${ pformat(c.viz_data) }
-            </pre-->
-          <div id="monthselector"></div>
-          <div class="piecharts">
-            <div id="graph_pie1" class="pie"></div>
-            <div id="graph_pie2" class="pie"></div>
-            <div id="graph_pie3" class="pie"></div>
-            <div id="graph_pie4" class="pie"></div>
-          </div>
-          </div>
+          </pre-->
+        </div>
+        <div id="monthselector"></div>
+        <div class="piecharts">
+          <div id="graph_pie1" class="pie"></div>
+          <div id="graph_pie2" class="pie"></div>
+          <div id="graph_pie3" class="pie"></div>
+          <div id="graph_pie4" class="pie"></div>
         </div>
       </div>
     </div>
   </py:match>
+
   <xi:include href="../layout.html" />
 </html>
+
 
