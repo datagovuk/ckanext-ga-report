@@ -22,11 +22,14 @@
       </script>
     <![endif]-->
     <link rel="stylesheet" type="text/css" href="/css/dgu-viz.min.css" />
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap-slider.css" />
     <link rel="stylesheet" type="text/css" href="/css/ga_d3.min.css" />
+    <script type="text/javascript" src="/scripts/bootstrap-slider.js"></script>
     <script type="text/javascript" src="/scripts/vendor/d3.v3.min.js"></script>
     <!--script type="text/javascript" src="/scripts/vendor/d3.sankey.min.js"></script-->
     <script type="text/javascript" src="/scripts/dgu-viz-pack.min.js"></script>
     <script type="text/javascript" src="/scripts/ga_d3_pack.min.js"></script>
+    <script type="text/javascript" src="/scripts/tmp.js"></script>
     <script type="text/javascript">
       $(function() { viz.loadGaReports(); })
     </script>
@@ -43,12 +46,20 @@
 ${ pformat(c.viz_data) }
           </pre-->
         </div>
-        <div id="monthselector"></div>
-        <div class="piecharts">
-          <div id="graph_pie1" class="pie"></div>
-          <div id="graph_pie2" class="pie"></div>
-          <div id="graph_pie3" class="pie"></div>
-          <div id="graph_pie4" class="pie"></div>
+        <h2>Content</h2>
+        (TODO)
+        <hr/>
+        <div id="container2">
+          <div id="monthselector"></div>
+          <div id="headline_month"></div>
+          <div class="piecharts">
+            <div id="graph_pie1" class="graph pie"></div>
+            <div id="graph_pie2" class="graph pie"></div>
+          </div>
+          <div class="horz_barcharts">
+            <div id="graph_bar1" class="graph bar"></div>
+            <div id="graph_bar2" class="graph bar"></div>
+          </div>
         </div>
       </div>
     </div>
