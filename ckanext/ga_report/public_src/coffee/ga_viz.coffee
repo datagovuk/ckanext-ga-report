@@ -6,11 +6,23 @@ window.viz.loadGaReports = ->
         ( {name:x, value: Math.round(15+Math.random()*15)} for x in names)
     randomMonth = -> return {
         pie1: randomPie(['Internet Explorer','Firefox','Safari','Google Chrome','Opera'])
-        pie2: randomPie(['UK','USA','India'])
+        pie2: randomPie(['UK','USA','India','Germany','France','Spain','Canada'])
     }
+    # United Kingdom	81.05%
+    # United States	2.70%
+    # India	1.06%
+    # Germany	0.98%
+    # France	0.94%
+    # Spain	0.78%
+    # Canada	0.77%
+
     data = 
         months: ( new Month(i%12,2012+Math.floor(i/12)) for i in [2..25] )
         monthlydata: ( randomMonth() for i in [2..25] )
+
+    for x in data.monthlydata
+        x.pie2[0].value = x.pie2[0].value * 50
+
     console.log data
     # --
     pie_options = 
@@ -18,12 +30,12 @@ window.viz.loadGaReports = ->
       initialDelay: 200
       startAngle: Math.PI/2
       endAngle: Math.PI*5/2
-      width: 390
-      height: 200
-      radius: 80
+      width: 420
+      height: 260
+      radius: 100
       innerRadius: 0
       transitionDelay: 0
-      transitionDuration: 150
+      transitionDuration: 300
     graph_pie1 = new viz.PieChart('#graph_pie1',data.monthlydata[0].pie1,colorFunction_browsers(),pie_options)
     pie_options.initialDelay += 150
     graph_pie2 = new viz.PieChart('#graph_pie2',data.monthlydata[0].pie2,d3.scale.category20(),pie_options)
@@ -55,10 +67,6 @@ window.viz.loadGaReports = ->
         currentVal = val
         setMonthData data.monthlydata[val]
 
-    for item in data.monthlydata[ data.monthlydata.length-1 ].pie1
-        icon = icon_for_browser(item.name)
-        $("<img src=\"#{icon}\" width=\"24\"/>").appendTo('.piecharts')
-
     slider.on 'slide',updateMonth
     for x in [0...data.months.length-1]
         percentage = (x*100) / (data.months.length-1)
@@ -71,27 +79,35 @@ window.viz.loadGaReports = ->
             $('<div class="caption"/>').text(data.months[x].year).appendTo(tick)
 
 colorFunction_browsers = ->
-    lookup = d3.scale.category20()
+    lookup = d3.scale.category20b()
     known = 
-        'Internet Explorer' : '#05559c'
-        'Firefox'           : '#f79f23'
-        'Safari'            : '#c7c4c5'
-        'Google Chrome'     : '#fdd901'
-        'Opera'             : '#e91716'
+        'Internet Explorer' : d3.hsl('#05559c')
+        'Firefox'           : d3.hsl('#f79f23')
+        'Safari'            : d3.hsl('#c7c4c5')
+        'Google Chrome'     : d3.hsl('#fdd901')
+        'Opera'             : d3.hsl('#cf0970').darker(1.0)
     return (x) ->
         if x of known then return known[x]
         console.log("Warning: inventing a color for browser=#{x}")
         return lookup(x)
 
-icon_for_browser = (x)->
+window.viz.icon_for_browser = (x)->
     known = 
         'Internet Explorer' : 'internet-explorer_48x48.png'
         'Firefox'           : 'firefox_48x48.png'
         'Safari'            : 'safari_48x48.png'
         'Google Chrome'     : 'chrome_48x48.png'
         'Opera'             : 'opera_48x48.png'
+        # --
+        'UK' : 'flag/GB.png'
+        'USA'  : 'flag/US.png'
+        'India'          : 'flag/IN.png'
+        'Germany'        : 'flag/DE.png'
+        'France'        : 'flag/FR.png'
+        'Spain'          : 'flag/ES.png'
+        'Canada'         : 'flag/CA.png'
     if x of known then return "/images/#{known[x]}"
-    console.log("Warning: no icon for browser=${x}")
+    console.log("Warning: no icon for browser=#{x}")
 
     
 class Month
