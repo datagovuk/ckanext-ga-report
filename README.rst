@@ -28,7 +28,11 @@ Installation
     $ pyenv/bin/activate
     $ pip install -e  git+https://github.com/datagovuk/ckanext-ga-report.git#egg=ckanext-ga-report
 
-2. Ensure you development.ini (or similar) contains the info about your Google Analytics account and configuration::
+2. Install Google's library::
+
+    $ pip install google-api-python-client
+
+3. Ensure you development.ini (or similar) contains the info about your Google Analytics account and configuration::
 
       googleanalytics.id = UA-1010101-1
       googleanalytics.account = Account name (e.g. data.gov.uk, see top level item at https://www.google.com/analytics)
@@ -38,11 +42,11 @@ Installation
 
    The ga-report.bounce_url specifies a particular path to record the bounce rate for. Typically it is / (the home page).
 
-3. Set up this extension's database tables using a paster command. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file)::
+4. Set up this extension's database tables using a paster command. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file)::
 
     $ paster initdb --config=../ckan/development.ini
 
-4. Enable the extension in your CKAN config file by adding it to ``ckan.plugins``::
+5. Enable the extension in your CKAN config file by adding it to ``ckan.plugins``::
 
     ckan.plugins = ga-report
 
