@@ -60,7 +60,9 @@ Problem shooting
 Authorization
 --------------
 
-Before you can access the data, you need to set up the OAUTH details which you can do by following the `instructions <https://developers.google.com/analytics/resources/tutorials/hello-analytics-api>`_ the outcome of which will be a file called credentials.json which should look like credentials.json.template with the relevant fields completed. These steps are below for convenience:
+Before you can access the data, you need to create an OAUTH token, which you can do by following the `instructions <https://developers.google.com/analytics/resources/tutorials/hello-analytics-api>`_ the outcome of which will be a file called credentials.json which should look like credentials.json.template with the relevant fields completed. The steps are listed below for convenience.
+
+NB You can do this all conveniently on your local computer and when you have created the token file you can copy it to your CKAN server for use.
 
 1. Visit the `Google APIs Console <https://code.google.com/apis/console>`_
 
