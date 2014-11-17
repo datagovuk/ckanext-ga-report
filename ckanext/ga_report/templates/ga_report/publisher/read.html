@@ -24,7 +24,7 @@
     <li><a href="/data/site-usage">Site Analytics</a></li>
     <py:if test="c.publisher">
       <li><a href="/data/site-usage/publisher">Publishers</a></li>
-      <li py:if="c.publisher"><a href="/data/site-usage/dataset/${c.publisher.name}">${c.publisher.title}</a></li>
+      <li py:if="c.publisher"><a href="/data/site-usage/publisher/${c.publisher.name}">${c.publisher.title}</a></li>
     </py:if>
     <py:if test="not c.publisher">
       <li><a href="${request.url}">Usage By Dataset</a></li>

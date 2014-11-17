@@ -77,7 +77,7 @@ class GAReportPlugin(p.SingletonPlugin):
             action='read'
         )
         map.connect(
-            '/data/site-usage/dataset/{id}',
+            '/data/site-usage/publisher/{id}',
             controller='ckanext.ga_report.controller:GaDatasetReport',
             action='read_publisher'
         )
