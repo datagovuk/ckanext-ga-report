@@ -2,6 +2,7 @@
 *.py~
 .gitignore
 ckan.log
+*.swp
 
 # Packages
 *.egg

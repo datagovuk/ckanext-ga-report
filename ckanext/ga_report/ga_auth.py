@@ -30,6 +30,8 @@ def init_service(token_file, credentials_file):
     Given a file containing the user's oauth token (and another with
     credentials in case we need to generate the token) will return a
     service object representing the analytics API.
+
+    On error, GA appears to raise TypeError.
     """
     http = httplib2.Http()
 

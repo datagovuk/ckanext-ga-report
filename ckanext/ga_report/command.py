@@ -82,7 +82,7 @@ class FixTimePeriods(CkanCommand):
         log = logging.getLogger('ckanext.ga_report')
 
         log.info("Updating 'All' records for old URLs")
-        post_update_url_stats()
+        post_update_url_stats(print_progress=True)
         log.info("Processing complete")
 
 
@@ -139,7 +139,8 @@ class LoadAnalytics(CkanCommand):
 
         downloader = DownloadAnalytics(svc, self.token, profile_id=get_profile_id(svc),
                                        delete_first=self.options.delete_first,
-                                       skip_url_stats=self.options.skip_url_stats)
+                                       skip_url_stats=self.options.skip_url_stats,
+                                       print_progress=True)
 
         time_period = self.args[0] if self.args else 'latest'
         if time_period == 'all':

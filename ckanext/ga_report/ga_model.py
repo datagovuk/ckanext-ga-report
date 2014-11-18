@@ -1,14 +1,15 @@
 import re
 import uuid
 
-from sqlalchemy import Table, Column, MetaData, ForeignKey
+from sqlalchemy import Table, Column, MetaData
 from sqlalchemy import types
-from sqlalchemy.sql import select
-from sqlalchemy.orm import mapper, relation
+from sqlalchemy.orm import mapper
+from sqlalchemy.sql.expression import cast
 from sqlalchemy import func
 
 import ckan.model as model
-from ckan.lib.base import *
+
+from lib import GaProgressBar
 
 log = __import__('logging').getLogger(__name__)
 
@@ -117,23 +118,28 @@ def _normalize_url(url):
     return '/' + '/'.join(url.split('/')[3:])
 
 
-def _get_package_and_publisher(url):
-    # e.g. /dataset/fuel_prices
-    # e.g. /dataset/fuel_prices/resource/e63380d4
-    dataset_match = re.match('/dataset/([^/]+)(/.*)?', url)
-    if dataset_match:
-        dataset_ref = dataset_match.groups()[0]
-        dataset = model.Package.get(dataset_ref)
-        if dataset:
-            publisher_groups = dataset.get_groups('organization')
-            if publisher_groups:
-                return dataset_ref,publisher_groups[0].name
-        return dataset_ref, None
-    else:
-        publisher_match = re.match('/publisher/([^/]+)(/.*)?', url)
-        if publisher_match:
-            return None, publisher_match.groups()[0]
-    return None, None
+class Identifier:
+    def __init__(self):
+        Identifier.dataset_re = re.compile('/dataset/([^/]+)(/.*)?')
+        Identifier.publisher_re = re.compile('/publisher/([^/]+)(/.*)?')
+
+    def get_package_and_publisher(self, url):
+        # e.g. /dataset/fuel_prices
+        # e.g. /dataset/fuel_prices/resource/e63380d4
+        dataset_match = Identifier.dataset_re.match(url)
+        if dataset_match:
+            dataset_ref = dataset_match.groups()[0]
+            dataset = model.Package.get(dataset_ref)
+            if dataset:
+                publisher_groups = dataset.get_groups('organization')
+                if publisher_groups:
+                    return dataset_ref, publisher_groups[0].name
+            return dataset_ref, None
+        else:
+            publisher_match = Identifier.publisher_re.match(url)
+            if publisher_match:
+                return None, publisher_match.groups()[0]
+        return None, None
 
 def update_sitewide_stats(period_name, stat_name, data, period_complete_day):
     for k,v in data.iteritems():
@@ -176,7 +182,8 @@ def pre_update_url_stats(period_name):
     model.repo.commit_and_remove()
     log.debug('...done')
 
-def post_update_url_stats():
+
+def post_update_url_stats(print_progress=False):
 
     """ Check the distinct url field in ga_url and make sure
         it has an All record.  If not then create one.
@@ -200,12 +207,15 @@ def post_update_url_stats():
 
     progress_total = len(views.keys())
     progress_count = 0
+    if print_progress:
+        progress_bar = GaProgressBar(progress_total)
+    identifier = Identifier()
     for key in views.keys():
         progress_count += 1
-        if progress_count % 100 == 0:
-            log.debug('.. %d/%d done so far', progress_count, progress_total)
+        if print_progress:
+            progress_bar.update(progress_count)
 
-        package, publisher = _get_package_and_publisher(key)
+        package, publisher = identifier.get_package_and_publisher(key)
 
         values = {'id': make_uuid(),
                   'period_name': "All",
@@ -221,7 +231,8 @@ def post_update_url_stats():
     log.debug('..done')
 
 
-def update_url_stats(period_name, period_complete_day, url_data):
+def update_url_stats(period_name, period_complete_day, url_data,
+                     print_progress=False):
     '''
     Given a list of urls and number of hits for each during a given period,
     stores them in GA_Url under the period and recalculates the totals for
@@ -229,17 +240,24 @@ def update_url_stats(period_name, period_complete_day, url_data):
     '''
     progress_total = len(url_data)
     progress_count = 0
+    if print_progress:
+        progress_bar = GaProgressBar(progress_total)
+    urls_in_ga_url_this_period = set(
+        result[0] for result in model.Session.query(GA_Url.url)
+                                     .filter(GA_Url.period_name==period_name)
+                                     .all())
+    identifier = Identifier()
     for url, views, visits in url_data:
         progress_count += 1
-        if progress_count % 100 == 0:
-            log.debug('.. %d/%d done so far', progress_count, progress_total)
+        if print_progress:
+            progress_bar.update(progress_count)
 
-        package, publisher = _get_package_and_publisher(url)
+        package, publisher = identifier.get_package_and_publisher(url)
 
-        item = model.Session.query(GA_Url).\
-            filter(GA_Url.period_name==period_name).\
-            filter(GA_Url.url==url).first()
-        if item:
+        if url in urls_in_ga_url_this_period:
+            item = model.Session.query(GA_Url).\
+                filter(GA_Url.period_name==period_name).\
+                filter(GA_Url.url==url).first()
             item.pageviews = item.pageviews + views
             item.visits = item.visits + visits
             if not item.package_id:
@@ -256,35 +274,34 @@ def update_url_stats(period_name, period_complete_day, url_data):
                       'visits': visits,
                       'department_id': publisher,
                       'package_id': package
-                     }
+                      }
             model.Session.add(GA_Url(**values))
+            urls_in_ga_url_this_period.add(url)
         model.Session.commit()
 
         if package:
-            old_pageviews, old_visits = 0, 0
-            old = model.Session.query(GA_Url).\
-                filter(GA_Url.period_name=='All').\
-                filter(GA_Url.url==url).all()
-            old_pageviews = sum([int(o.pageviews) for o in old])
-            old_visits = sum([int(o.visits) for o in old])
-
-            entries = model.Session.query(GA_Url).\
-                filter(GA_Url.period_name!='All').\
-                filter(GA_Url.url==url).all()
+            counts = \
+                model.Session.query(func.sum(cast(GA_Url.pageviews,
+                                                  types.INTEGER)),
+                                    func.sum(cast(GA_Url.visits,
+                                                  types.INTEGER))
+                                    ) \
+                     .filter(GA_Url.period_name!='All') \
+                     .filter(GA_Url.url==url) \
+                     .all()
+            pageviews, visits = counts[0]
             values = {'id': make_uuid(),
                       'period_name': 'All',
                       'period_complete_day': 0,
                       'url': url,
-                      'pageviews': sum([int(e.pageviews) for e in entries]) + int(old_pageviews),
-                      'visits': sum([int(e.visits or 0) for e in entries]) + int(old_visits),
+                      'pageviews': pageviews,
+                      'visits': visits,
                       'department_id': publisher,
                       'package_id': package
-                     }
+                      }
 
             model.Session.add(GA_Url(**values))
             model.Session.commit()
-
-
 
 
 def update_social(period_name, data):
@@ -314,6 +331,7 @@ def update_social(period_name, data):
                          }
                 model.Session.add(GA_ReferralStat(**values))
             model.Session.commit()
+
 
 def update_publisher_stats(period_name):
     """

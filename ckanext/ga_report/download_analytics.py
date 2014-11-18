@@ -1,41 +1,42 @@
 import os
-import logging
 import datetime
-import httplib
 import collections
 import requests
 import json
+import time
+
 from pylons import config
 from ga_model import _normalize_url
 import ga_model
+from lib import GaProgressBar
 
-#from ga_client import GA
-
-log = logging.getLogger('ckanext.ga-report')
+log = __import__('logging').getLogger(__name__)
 
 FORMAT_MONTH = '%Y-%m'
 MIN_VIEWS = 50
 MIN_VISITS = 20
 MIN_DOWNLOADS = 10
 
+
 class DownloadAnalytics(object):
     '''Downloads and stores analytics info'''
 
     def __init__(self, service=None, token=None, profile_id=None, delete_first=False,
-                 skip_url_stats=False):
+                 skip_url_stats=False, print_progress=False):
         self.period = config['ga-report.period']
         self.service = service
         self.profile_id = profile_id
         self.delete_first = delete_first
         self.skip_url_stats = skip_url_stats
         self.token = token
+        self.print_progress = print_progress
 
     def specific_month(self, date):
         import calendar
 
         first_of_this_month = datetime.datetime(date.year, date.month, 1)
         _, last_day_of_month = calendar.monthrange(int(date.year), int(date.month))
-        last_of_this_month =  datetime.datetime(date.year, date.month, last_day_of_month)
+        last_of_this_month = datetime.datetime(date.year, date.month, last_day_of_month)
         # if this is the latest month, note that it is only up until today
         now = datetime.datetime.now()
         if now.year == date.year and now.month == date.month:
@@ -45,7 +46,6 @@ class DownloadAnalytics(object):
                     last_day_of_month,
                     first_of_this_month, last_of_this_month),)
         self.download_and_store(periods)
-
 
     def latest(self):
         if self.period == 'monthly':
@@ -61,7 +61,7 @@ class DownloadAnalytics(object):
 
 
     def for_date(self, for_date):
-        assert isinstance(since_date, datetime.datetime)
+        assert isinstance(for_date, datetime.datetime)
         periods = [] # (period_name, period_complete_day, start_date, end_date)
         if self.period == 'monthly':
             first_of_the_months_until_now = []
@@ -101,7 +101,6 @@ class DownloadAnalytics(object):
         else:
             return period_name
 
-
     def download_and_store(self, periods):
         for period_name, period_complete_day, start_date, end_date in periods:
             log.info('Period "%s" (%s - %s)',
@@ -133,14 +132,13 @@ class DownloadAnalytics(object):
                 self.store(period_name, period_complete_day, data,)
 
                 # Make sure the All records are correct.
-                ga_model.post_update_url_stats()
+                ga_model.post_update_url_stats(print_progress=self.print_progress)
 
                 log.info('Associating datasets with their publisher')
                 ga_model.update_publisher_stats(period_name) # about 30 seconds.
 
-
             log.info('Downloading and storing analytics for site-wide stats')
-            self.sitewide_stats( period_name, period_complete_day )
+            self.sitewide_stats(period_name, period_complete_day)
 
             log.info('Downloading and storing analytics for social networks')
             self.update_social_info(period_name, start_date, end_date)
@@ -168,7 +166,7 @@ class DownloadAnalytics(object):
             args['start-date'] = start_date
             args['end-date'] = end_date
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
@@ -204,7 +202,7 @@ class DownloadAnalytics(object):
             args["filters"] = query
             args["alt"] = "json"
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
 
         except Exception, e:
             log.exception(e)
@@ -226,7 +224,8 @@ class DownloadAnalytics(object):
 
     def store(self, period_name, period_complete_day, data):
         if 'url' in data:
-            ga_model.update_url_stats(period_name, period_complete_day, data['url'])
+            ga_model.update_url_stats(period_name, period_complete_day, data['url'],
+                                      print_progress=self.print_progress)
 
     def sitewide_stats(self, period_name, period_complete_day):
         import calendar
@@ -248,36 +247,55 @@ class DownloadAnalytics(object):
             data[key] = data.get(key,0) + result[1]
         return data
 
-    def _get_json(self, params, prev_fail=False):
-        ga_token_filepath = os.path.expanduser(config.get('googleanalytics.token.filepath', ''))
+    @classmethod
+    def _do_ga_request(cls, params, headers):
+        '''Makes a request to GA. logs any errors.
+
+        Returns or the response (requests object) or 'error'
+        '''
+        ga_url = 'https://www.googleapis.com/analytics/v3/data/ga'
+        try:
+            response = requests.get(ga_url, params=params, headers=headers)
+        except requests.exceptions.RequestException, e:
+            log.error("Exception getting GA data: %s" % e)
+            return 'error'
+        if response.status_code != 200:
+            log.error("Error getting GA data: %s %s" % (response.status_code,
+                                                        response.content))
+            return 'error'
+        return response
+
+    def _get_ga_data(self, params, prev_fail=False):
+        '''Makes a request to the GA API for the data specified in params.
+
+        Returns a dict with the data, or dict(url=[]) if unsuccessful.
+        '''
+        ga_token_filepath = os.path.expanduser(
+            config.get('googleanalytics.token.filepath', ''))
         if not ga_token_filepath:
-            print 'ERROR: In the CKAN config you need to specify the filepath of the ' \
-                'Google Analytics token file under key: googleanalytics.token.filepath'
+            log.error('In the CKAN config you need to specify the filepath '
+                      'of the Google Analytics token file under key: '
+                      'googleanalytics.token.filepath')
             return
 
-        log.info("Trying to refresh our OAuth token")
         try:
             from ga_auth import init_service
             self.token, svc = init_service(ga_token_filepath, None)
-            log.info("OAuth token refreshed")
         except Exception, auth_exception:
-            log.error("Oauth refresh failed")
+            log.error('OAuth refresh failed')
             log.exception(auth_exception)
-            return
+            return dict(url=[])
 
-        try:
-            headers = {'authorization': 'Bearer ' + self.token}
-            r = requests.get("https://www.googleapis.com/analytics/v3/data/ga", params=params, headers=headers)
-            if r.status_code != 200:
-                log.info("STATUS: %s" % (r.status_code,))
-                log.info("CONTENT: %s" % (r.content,))
-                raise Exception("Request with params: %s failed" % params)
+        headers = {'authorization': 'Bearer ' + self.token}
+        response = self._do_ga_request(params, headers)
+        if response == 'error':
+            log.info('Will retry request after a pause')
+            time.sleep(60)
+            response = self._do_ga_request(params, headers)
+            if response == 'error':
+                return dict(url=[])
+        return response.json()
 
-            return json.loads(r.content)
-        except Exception, e:
-              log.exception(e)
-
-        return dict(url=[])
 
     def _totals_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Fetches distinct totals, total pageviews etc """
@@ -292,7 +310,7 @@ class DownloadAnalytics(object):
             args["sort"] = "-ga:pageviews"
             args["alt"] = "json"
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
@@ -315,7 +333,7 @@ class DownloadAnalytics(object):
             args["metrics"] = "ga:pageviewsPerVisit,ga:avgTimeOnSite,ga:percentNewVisits,ga:visits"
             args["alt"] = "json"
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
@@ -349,7 +367,7 @@ class DownloadAnalytics(object):
             args["metrics"] = "ga:visitBounceRate"
             args["alt"] = "json"
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
@@ -386,7 +404,7 @@ class DownloadAnalytics(object):
             args["sort"] = "-ga:pageviews"
             args["alt"] = "json"
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
@@ -427,7 +445,7 @@ class DownloadAnalytics(object):
             args["metrics"] = "ga:totalEvents"
             args["alt"] = "json"
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
@@ -443,11 +461,12 @@ class DownloadAnalytics(object):
             progress_total = len(result_data)
             progress_count = 0
             resources_not_matched = []
+            if self.print_progress:
+                progress_bar = GaProgressBar(progress_total)
             for result in result_data:
                 progress_count += 1
-                if progress_count % 100 == 0:
-                    log.debug('.. %d/%d done so far', progress_count, progress_total)
-
+                if self.print_progress:
+                    progress_bar.update(progress_count)
                 url = result[0].strip()
 
                 # Get package id associated with the resource that has this URL.
@@ -464,7 +483,7 @@ class DownloadAnalytics(object):
                     resources_not_matched.append(url)
                     continue
             if resources_not_matched:
-                log.debug('Could not match %i or %i resource URLs to datasets. e.g. %r',
+                log.debug('Could not match %i of %i resource URLs to datasets. e.g. %r',
                           len(resources_not_matched), progress_total, resources_not_matched[:3])
 
         log.info('Associating downloads of resource URLs with their respective datasets')
@@ -484,7 +503,7 @@ class DownloadAnalytics(object):
             args['start-date'] = start_date
             args['end-date'] = end_date
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
@@ -511,7 +530,7 @@ class DownloadAnalytics(object):
             args['start-date'] = start_date
             args['end-date'] = end_date
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
@@ -540,7 +559,7 @@ class DownloadAnalytics(object):
             args['start-date'] = start_date
             args['end-date'] = end_date
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
@@ -577,7 +596,7 @@ class DownloadAnalytics(object):
             args['start-date'] = start_date
             args['end-date'] = end_date
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
@@ -637,7 +656,7 @@ class DownloadAnalytics(object):
             args['start-date'] = start_date
             args['end-date'] = end_date
 
-            results = self._get_json(args)
+            results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
