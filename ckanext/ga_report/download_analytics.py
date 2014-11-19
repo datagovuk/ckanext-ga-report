@@ -173,7 +173,7 @@ class DownloadAnalytics(object):
 
 
         data = collections.defaultdict(list)
-        rows = results.get('rows',[])
+        rows = results.get('rows')
         for row in rows:
             url = _normalize_url('http:/' + row[0])
             data[url].append( (row[1], int(row[2]),) )
@@ -209,7 +209,7 @@ class DownloadAnalytics(object):
             return dict(url=[])
 
         packages = []
-        log.info("There are %d results" % results['totalResults'])
+        log.info('There are %d results', results['totalResults'])
         for entry in results.get('rows'):
             (loc,pageviews,visits) = entry
             url = _normalize_url('http:/' + loc) # strips off domain e.g. www.data.gov.uk or data.gov.uk
@@ -294,7 +294,13 @@ class DownloadAnalytics(object):
             response = self._do_ga_request(params, headers)
             if response == 'error':
                 return dict(url=[])
-        return response.json()
+
+        data_dict = response.json()
+
+        # If there are 0 results then the rows are missed off, so add it in
+        if 'rows' not in data_dict:
+            data_dict['rows'] = []
+        return data_dict
 
 
     def _totals_stats(self, start_date, end_date, period_name, period_complete_day):
