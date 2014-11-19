@@ -152,10 +152,6 @@ class DownloadAnalytics(object):
         sort = '-ga:entrances'
 
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = dict(ids='ga:' + self.profile_id,
                        filters=query,
                        metrics=metrics,
@@ -247,28 +243,37 @@ class DownloadAnalytics(object):
             data[key] = data.get(key,0) + result[1]
         return data
 
-    @classmethod
-    def _do_ga_request(cls, params, headers):
-        '''Makes a request to GA. logs any errors.
-
-        Returns or the response (requests object) or 'error'
-        '''
-        ga_url = 'https://www.googleapis.com/analytics/v3/data/ga'
-        try:
-            response = requests.get(ga_url, params=params, headers=headers)
-        except requests.exceptions.RequestException, e:
-            log.error("Exception getting GA data: %s" % e)
-            return 'error'
-        if response.status_code != 200:
-            log.error("Error getting GA data: %s %s" % (response.status_code,
-                                                        response.content))
-            return 'error'
-        return response
-
-    def _get_ga_data(self, params, prev_fail=False):
-        '''Makes a request to the GA API for the data specified in params.
+    def _get_ga_data(self, params):
+        '''Returns the GA data specified in params.
+        Does all requests to the GA API and retries if needed.
 
         Returns a dict with the data, or dict(url=[]) if unsuccessful.
+        '''
+        try:
+            data = self._get_ga_data_simple(params)
+        except DownloadError:
+            log.info('Will retry requests after a pause')
+            time.sleep(60)
+            try:
+                data = self._get_ga_data_simple(params)
+            except DownloadError:
+                return dict(url=[])
+            except Exception, e:
+                log.exception(e)
+                log.error('Uncaught exception in get_ga_data_simple (see '
+                          'above)')
+                return dict(url=[])
+        except Exception, e:
+            log.exception(e)
+            log.error('Uncaught exception in get_ga_data_simple (see above)')
+            return dict(url=[])
+        return data
+
+    def _get_ga_data_simple(self, params):
+        '''Returns the GA data specified in params.
+        Does all requests to the GA API.
+
+        Returns a dict with the data, or raises DownloadError if unsuccessful.
         '''
         ga_token_filepath = os.path.expanduser(
             config.get('googleanalytics.token.filepath', ''))
@@ -288,12 +293,7 @@ class DownloadAnalytics(object):
 
         headers = {'authorization': 'Bearer ' + self.token}
         response = self._do_ga_request(params, headers)
-        if response == 'error':
-            log.info('Will retry request after a pause')
-            time.sleep(60)
-            response = self._do_ga_request(params, headers)
-            if response == 'error':
-                return dict(url=[])
+        # allow any exceptions to bubble up
 
         data_dict = response.json()
 
@@ -302,6 +302,26 @@ class DownloadAnalytics(object):
             data_dict['rows'] = []
         return data_dict
 
+    @classmethod
+    def _do_ga_request(cls, params, headers):
+        '''Makes a request to GA. Assumes the token init request is already done.
+
+        Returns the response (requests object).
+        On error it logs it and raises DownloadError.
+        '''
+        # Because of issues of invalid responses when using the ga library, we
+        # are going to make these requests ourselves.
+        ga_url = 'https://www.googleapis.com/analytics/v3/data/ga'
+        try:
+            response = requests.get(ga_url, params=params, headers=headers)
+        except requests.exceptions.RequestException, e:
+            log.error("Exception getting GA data: %s" % e)
+            raise DownloadError()
+        if response.status_code != 200:
+            log.error("Error getting GA data: %s %s" % (response.status_code,
+                                                        response.content))
+            raise DownloadError()
+        return response
 
     def _totals_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Fetches distinct totals, total pageviews etc """
@@ -326,10 +346,6 @@ class DownloadAnalytics(object):
             period_complete_day)
 
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = {}
             args["max-results"] = 100000
             args["start-date"] = start_date
@@ -358,10 +374,6 @@ class DownloadAnalytics(object):
                           config.get('ga-report.bounce_url', '/'))
 
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = {}
             args["max-results"] = 100000
             args["start-date"] = start_date
@@ -395,10 +407,6 @@ class DownloadAnalytics(object):
         """ Fetches stats about language and country """
 
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = {}
             args["max-results"] = 100000
             args["start-date"] = start_date
@@ -436,10 +444,6 @@ class DownloadAnalytics(object):
         data = {}
 
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = {}
             args["max-results"] = 100000
             args["start-date"] = start_date
@@ -496,10 +500,6 @@ class DownloadAnalytics(object):
         process_result_data(results.get('rows'))
 
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = dict( ids='ga:' + self.profile_id,
                          filters='ga:eventAction==download-cache',
                          metrics='ga:totalEvents',
@@ -524,10 +524,6 @@ class DownloadAnalytics(object):
         """ Finds out which social sites people are referred from """
 
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = dict( ids='ga:' + self.profile_id,
                          metrics='ga:pageviews',
                          sort='-ga:pageviews',
@@ -553,10 +549,6 @@ class DownloadAnalytics(object):
     def _os_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Operating system stats """
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = dict( ids='ga:' + self.profile_id,
                          metrics='ga:pageviews',
                          sort='-ga:pageviews',
@@ -589,10 +581,6 @@ class DownloadAnalytics(object):
         """ Information about browsers and browser versions """
 
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = dict( ids='ga:' + self.profile_id,
                          metrics='ga:pageviews',
                          sort='-ga:pageviews',
@@ -650,10 +638,6 @@ class DownloadAnalytics(object):
         """ Info about mobile devices """
 
         try:
-            # Because of issues of invalid responses, we are going to make these requests
-            # ourselves.
-            headers = {'authorization': 'Bearer ' + self.token}
-
             args = dict( ids='ga:' + self.profile_id,
                          metrics='ga:pageviews',
                          sort='-ga:pageviews',
@@ -691,3 +675,7 @@ class DownloadAnalytics(object):
         for key, value in data.items():
             if value < threshold:
                 del data[key]
+
+
+class DownloadError(Exception):
+    pass
