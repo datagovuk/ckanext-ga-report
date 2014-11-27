@@ -29,7 +29,18 @@ def _get_unix_epoch(strdate):
 
 def _month_details(cls, stat_key=None):
     '''
-    Returns a list of all the periods for which we have data, unfortunately
+    Returns a list of all the periods for which we have data and the date we've
+    got data up to in the latest month.
+
+    e.g. ([(u'2014-11', 'November 2014'),
+           (u'2014-10', 'October 2014'),
+           (u'2014-09', 'September 2014')],
+           '27th')
+       i.e. we have 3 months up to 27th November
+
+    :param cls: GA_Stat or GA_Url
+
+    unfortunately
     knows too much about the type of the cls being passed as GA_Url has a
     more complex query
 
@@ -38,21 +49,24 @@ def _month_details(cls, stat_key=None):
     months = []
     day = None
 
-    q = model.Session.query(cls.period_name,cls.period_complete_day)\
-        .filter(cls.period_name!='All').distinct(cls.period_name)
+    q = model.Session.query(cls.period_name, cls.period_complete_day)\
+             .filter(cls.period_name!='All') \
+             .distinct(cls.period_name)
     if stat_key:
-        q=  q.filter(cls.stat_name==stat_key)
+        q = q.filter(cls.stat_name==stat_key)
 
     vals = q.order_by("period_name desc").all()
 
+    # For the most recent month, add 'ordinal' to the day
+    # e.g. '27' -> day='27th'
     if vals and vals[0][1]:
         day = int(vals[0][1])
         ordinal = 'th' if 11 <= day <= 13 \
-            else {1:'st',2:'nd',3:'rd'}.get(day % 10, 'th')
+            else {1: 'st', 2: 'nd', 3: 'rd'}.get(day % 10, 'th')
         day = "{day}{ordinal}".format(day=day, ordinal=ordinal)
 
     for m in vals:
-        months.append( (m[0], _get_month_name(m[0])))
+        months.append((m[0], _get_month_name(m[0])))
 
     return months, day
 
@@ -78,7 +92,6 @@ class GaReport(BaseController):
                              entry.stat_name.encode('utf-8'),
                              entry.key.encode('utf-8'),
                              entry.value.encode('utf-8')])
-
 
     def index(self):
 

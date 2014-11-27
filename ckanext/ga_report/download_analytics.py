@@ -63,7 +63,6 @@ class DownloadAnalytics(object):
         assert isinstance(for_date, datetime.datetime)
         periods = [] # (period_name, period_complete_day, start_date, end_date)
         if self.period == 'monthly':
-            first_of_the_months_until_now = []
             year = for_date.year
             month = for_date.month
             now = datetime.datetime.now()
