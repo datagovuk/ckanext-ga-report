@@ -147,8 +147,14 @@ class DownloadAnalytics(object):
                 log.info('Associating datasets with their publisher')
                 ga_model.update_publisher_stats(period_name) # about 30 seconds.
 
+            # Clean out old ga_stats data before storing the new
+            ga_model.pre_update_sitewide_stats(period_name)
+
             log.info('Downloading and storing analytics for site-wide stats')
             self.sitewide_stats(period_name, period_complete_day)
+
+            # Clean out old ga_stats data before storing the new
+            ga_model.pre_update_social_stats(period_name)
 
             log.info('Downloading and storing analytics for social networks')
             self.update_social_info(period_name, start_date, end_date)

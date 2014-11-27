@@ -160,12 +160,12 @@ def update_sitewide_stats(period_name, stat_name, data, period_complete_day):
 def pre_update_url_stats(period_name):
     q = model.Session.query(GA_Url).\
         filter(GA_Url.period_name==period_name)
-    log.debug("Deleting %d '%s' records" % (q.count(), period_name))
+    log.debug("Deleting %d '%s' URL records" % (q.count(), period_name))
     q.delete()
 
     q = model.Session.query(GA_Url).\
         filter(GA_Url.period_name == 'All')
-    log.debug("Deleting %d 'All' records..." % q.count())
+    log.debug("Deleting %d 'All' URL records..." % q.count())
     q.delete()
 
     model.Session.flush()
@@ -295,11 +295,31 @@ def update_url_stats(period_name, period_complete_day, url_data,
             model.Session.commit()
 
 
-def update_social(period_name, data):
-    # Clean up first.
-    model.Session.query(GA_ReferralStat).\
-        filter(GA_ReferralStat.period_name==period_name).delete()
+def pre_update_sitewide_stats(period_name):
+    q = model.Session.query(GA_Stat).\
+        filter(GA_Stat.period_name==period_name)
+    log.debug("Deleting %d '%s' sitewide records..." % (q.count(), period_name))
+    q.delete()
 
+    model.Session.flush()
+    model.Session.commit()
+    model.repo.commit_and_remove()
+    log.debug('...done')
+
+
+def pre_update_social_stats(period_name):
+    q = model.Session.query(GA_ReferralStat).\
+        filter(GA_ReferralStat.period_name==period_name)
+    log.debug("Deleting %d '%s' social records..." % (q.count(), period_name))
+    q.delete()
+
+    model.Session.flush()
+    model.Session.commit()
+    model.repo.commit_and_remove()
+    log.debug('...done')
+
+
+def update_social(period_name, data):
     for url,data in data.iteritems():
         for entry in data:
             source = entry[0]
