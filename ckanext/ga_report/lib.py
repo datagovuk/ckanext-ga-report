@@ -4,6 +4,8 @@ try:
 
     class GaProgressBar(ProgressBar):
         def __init__(self, total):
+            if total == 0:
+                return
             widgets = ['Test: ', Percentage(), ' ', Bar(),
                        ' ', ETA(), ' ']
             ProgressBar.__init__(self, widgets=widgets,

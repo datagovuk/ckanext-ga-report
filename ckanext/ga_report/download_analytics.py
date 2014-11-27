@@ -2,11 +2,10 @@ import os
 import datetime
 import collections
 import requests
-import json
 import time
+import re
 
 from pylons import config
-from ga_model import _normalize_url
 import ga_model
 from lib import GaProgressBar
 
@@ -119,14 +118,26 @@ class DownloadAnalytics(object):
 
                 accountName = config.get('googleanalytics.account')
 
+                path_prefix = '~'  # i.e. it is a regex
+                # Possibly there is a domain in the path.
+                # I'm not sure why, but on the data.gov.uk property we see
+                # the domain gets added to the GA path. e.g.
+                #   '/data.gov.uk/data/search'
+                #   '/co-prod2.dh.bytemark.co.uk/apps/test-app'
+                # but on other properties we don't. e.g.
+                #   '/data/search'
+                path_prefix += '(/%s)?' % accountName
+
                 log.info('Downloading analytics for dataset views')
-                data = self.download(start_date, end_date, '~/%s/dataset/[a-z0-9-_]+' % accountName)
+                data = self.download(start_date, end_date,
+                                     path_prefix + '/dataset/[a-z0-9-_]+')
 
                 log.info('Storing dataset views (%i rows)', len(data.get('url')))
                 self.store(period_name, period_complete_day, data, )
 
                 log.info('Downloading analytics for publisher views')
-                data = self.download(start_date, end_date, '~/%s/publisher/[a-z0-9-_]+' % accountName)
+                data = self.download(start_date, end_date,
+                                     path_prefix + '/publisher/[a-z0-9-_]+')
 
                 log.info('Storing publisher views (%i rows)', len(data.get('url')))
                 self.store(period_name, period_complete_day, data,)
@@ -143,7 +154,6 @@ class DownloadAnalytics(object):
             log.info('Downloading and storing analytics for social networks')
             self.update_social_info(period_name, start_date, end_date)
 
-
     def update_social_info(self, period_name, start_date, end_date):
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
@@ -153,11 +163,11 @@ class DownloadAnalytics(object):
 
         try:
             args = dict(ids='ga:' + self.profile_id,
-                       filters=query,
-                       metrics=metrics,
-                       sort=sort,
-                       dimensions="ga:landingPagePath,ga:socialNetwork",
-                       max_results=10000)
+                        filters=query,
+                        metrics=metrics,
+                        sort=sort,
+                        dimensions="ga:landingPagePath,ga:socialNetwork",
+                        max_results=10000)
 
             args['start-date'] = start_date
             args['end-date'] = end_date
@@ -167,14 +177,12 @@ class DownloadAnalytics(object):
             log.exception(e)
             results = dict(url=[])
 
-
         data = collections.defaultdict(list)
         rows = results.get('rows')
         for row in rows:
-            url = _normalize_url('http:/' + row[0])
-            data[url].append( (row[1], int(row[2]),) )
+            url = strip_off_host_prefix(row[0])
+            data[url].append((row[1], int(row[2]),))
         ga_model.update_social(period_name, data)
-
 
     def download(self, start_date, end_date, path=None):
         '''Get data from GA for a given time period'''
@@ -182,7 +190,6 @@ class DownloadAnalytics(object):
         end_date = end_date.strftime('%Y-%m-%d')
         query = 'ga:pagePath=%s$' % path
         metrics = 'ga:pageviews, ga:visits'
-        sort = '-ga:pageviews'
 
         # Supported query params at
         # https://developers.google.com/analytics/devguides/reporting/core/v3/reference
@@ -207,8 +214,8 @@ class DownloadAnalytics(object):
         packages = []
         log.info('There are %d results', results['totalResults'])
         for entry in results.get('rows'):
-            (loc,pageviews,visits) = entry
-            url = _normalize_url('http:/' + loc) # strips off domain e.g. www.data.gov.uk or data.gov.uk
+            (path, pageviews, visits) = entry
+            url = strip_off_host_prefix(path)  # strips off domain e.g. www.data.gov.uk or data.gov.uk
 
             if not url.startswith('/dataset/') and not url.startswith('/publisher/'):
                 # filter out strays like:
@@ -370,8 +377,8 @@ class DownloadAnalytics(object):
         ga_model.update_sitewide_stats(period_name, "Totals", data, period_complete_day)
 
         # Bounces from / or another configurable page.
-        path = '/%s%s' % (config.get('googleanalytics.account'),
-                          config.get('ga-report.bounce_url', '/'))
+        path = '~(/%s)?%s' % (config.get('googleanalytics.account'),
+                              config.get('ga-report.bounce_url', '/'))
 
         try:
             args = {}
@@ -379,8 +386,7 @@ class DownloadAnalytics(object):
             args["start-date"] = start_date
             args["end-date"] = end_date
             args["ids"] = "ga:" + self.profile_id
-
-            args["filters"] = 'ga:pagePath==%s' % (path,)
+            args["filters"] = 'ga:pagePath==%s' % path
             args["dimensions"] = 'ga:pagePath'
             args["metrics"] = "ga:visitBounceRate"
             args["alt"] = "json"
@@ -675,6 +681,28 @@ class DownloadAnalytics(object):
         for key, value in data.items():
             if value < threshold:
                 del data[key]
+
+global host_re
+host_re = None
+
+
+def strip_off_host_prefix(url):
+    '''Strip off the hostname that gets prefixed to the GA Path on data.gov.uk
+    UA-1 but not on others.
+
+    >>> strip_off_host_prefix('/data.gov.uk/dataset/weekly_fuel_prices')
+    '/dataset/weekly_fuel_prices'
+    >>> strip_off_host_prefix('/dataset/weekly_fuel_prices')
+    '/dataset/weekly_fuel_prices'
+    '''
+    global host_re
+    if not host_re:
+        host_re = re.compile('^\/[^\/]+\.')
+    # look for a dot in the first part of the path
+    if host_re.search(url):
+        # there is a dot, so must be a host name - strip it off
+        return '/' + '/'.join(url.split('/')[2:])
+    return url
 
 
 class DownloadError(Exception):

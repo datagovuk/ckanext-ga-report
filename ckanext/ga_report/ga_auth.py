@@ -7,6 +7,8 @@ from oauth2client.tools import run
 
 from pylons import config
 
+log = __import__('logging').getLogger(__name__)
+
 
 def _prepare_credentials(token_filename, credentials_filename):
     """
@@ -38,38 +40,53 @@ def init_service(token_file, credentials_file):
     credentials = _prepare_credentials(token_file, credentials_file)
     http = credentials.authorize(http)  # authorize the http object
 
-    return credentials.access_token, build('analytics', 'v3', http=http)
+    service = credentials.access_token, build('analytics', 'v3', http=http)
+    return service
 
 
 def get_profile_id(service):
     """
-    Get the profile ID for this user and the service specified by the
-    'googleanalytics.id' configuration option. This function iterates
-    over all of the accounts available to the user who invoked the
-    service to find one where the account name matches (in case the
-    user has several).
+    Returns the GA Profile ID (a number), which is derived from the GA Property
+    ID (e.g. 'UA-10855508-6'), as specified by configured googleananalyics.id.
+    It also checks that that Property ID exists for the configured
+    googleanalytics.account and is accessible with the OAuth token.
     """
+    # Get list of GA Accounts available to the GA user represented by the OAuth
+    # token
     accounts = service.management().accounts().list().execute()
-
     if not accounts.get('items'):
+        log.error('No GA accounts are associated with the GA user (OAuth token)')
         return None
 
+    # Check the config of the GA Account (googleanalytics.account)
     accountName = config.get('googleanalytics.account')
     if not accountName:
         raise Exception('googleanalytics.account needs to be configured')
+    accounts_by_name = dict([(acc.get('name'), acc.get('id'))
+                             for acc in accounts.get('items', [])])
+    if accountName not in accounts_by_name:
+        log.error('The specified GA account is not available. Configure googleanalytics.account to one of: %r', accounts_by_name.keys())
+        return None
+    accountId = accounts_by_name[accountName]  # e.g. accountId='10855508'
+
+    # Check the config of the GA Property ID (googleanalyics.id)
+    webproperties = service.management().webproperties().list(accountId=accountId).execute()
+    property_ids = [prop.get('id') for prop in webproperties.get('items', [])]
     webPropertyId = config.get('googleanalytics.id')
     if not webPropertyId:
         raise Exception('googleanalytics.id needs to be configured')
-    for acc in accounts.get('items'):
-        if acc.get('name') == accountName:
-            accountId = acc.get('id')
+    if webPropertyId not in property_ids:
+        log.error('The specified GA Property is not available. Configure googleanalytics.id to one of: %r', property_ids.keys())
+        return None
 
-    webproperties = service.management().webproperties().list(accountId=accountId).execute()
-
+    # Convert the GA Property ID to GA's internal number "Profile ID"
     profiles = service.management().profiles().list(
         accountId=accountId, webPropertyId=webPropertyId).execute()
+    if not profiles.get('items'):
+        log.error('The specified GA Property ID does not appear to have an internal profile.Check config of googleanalytics.id')
+        return None
+    profileId = profiles['items'][0]['id']
 
-    if profiles.get('items'):
-        return profiles.get('items')[0].get('id')
+    log.debug('GA Property %s has GA Profile id: %s', webPropertyId, profileId)
+    return profileId
 
-    return None

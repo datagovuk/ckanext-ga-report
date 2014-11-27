@@ -109,15 +109,6 @@ def get_table(name):
     return cached_tables[name]
 
 
-def _normalize_url(url):
-    '''Strip off the hostname etc. Do this before storing it.
-
-    >>> normalize_url('http://data.gov.uk/dataset/weekly_fuel_prices')
-    '/dataset/weekly_fuel_prices'
-    '''
-    return '/' + '/'.join(url.split('/')[3:])
-
-
 class Identifier:
     def __init__(self):
         Identifier.dataset_re = re.compile('/dataset/([^/]+)(/.*)?')
