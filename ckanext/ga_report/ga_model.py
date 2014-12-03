@@ -249,8 +249,8 @@ def update_url_stats(period_name, period_complete_day, url_data,
             item = model.Session.query(GA_Url).\
                 filter(GA_Url.period_name==period_name).\
                 filter(GA_Url.url==url).first()
-            item.pageviews = item.pageviews + views
-            item.visits = item.visits + visits
+            item.pageviews = int(item.pageviews or 0) + int(views or 0)
+            item.visits = int(item.visits or 0) + int(visits or 0)
             if not item.package_id:
                 item.package_id = package
             if not item.department_id:
