@@ -450,7 +450,10 @@ def _to_rickshaw(data, percentageMode=False):
     data = []
     for series in raw_data:
         for point in series['data']:
-            percentage = (100*float(point['y'])) / totals[point['x']]
+            try:
+                percentage = (100*float(point['y'])) / totals[point['x']]
+            except ZeroDivisionError:
+                percentage = 0
             if not (series in data) and percentage>THRESHOLD:
                 data.append(series)
             point['y'] = percentage
