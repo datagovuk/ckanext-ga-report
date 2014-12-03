@@ -328,6 +328,14 @@ class GaDatasetReport(BaseController):
         if month != 'All':
             have_download_data = month >= DOWNLOADS_AVAILABLE_FROM
 
+        if have_download_data:
+            download_stats_query = model.Session.query(GA_Stat.key, func.sum(cast(GA_Stat.value, sqlalchemy.types.Integer)))
+            download_stats_query = download_stats_query.filter(GA_Stat.stat_name=='Downloads')
+            if month != 'All':
+                download_stats_query = download_stats_query.filter(GA_Stat.period_name==month)
+            download_stats_query = download_stats_query.group_by(GA_Stat.key).all()
+            download_stats = dict(download_stats_query)
+
         q = model.Session.query(GA_Url,model.Package)\
             .filter(model.Package.name==GA_Url.package_id)\
             .filter(GA_Url.url.like('/dataset/%'))
@@ -345,14 +353,7 @@ class GaDatasetReport(BaseController):
             if package:
                 # Downloads ....
                 if have_download_data:
-                    dls = model.Session.query(GA_Stat).\
-                        filter(GA_Stat.stat_name=='Downloads').\
-                        filter(GA_Stat.key==package.name)
-                    if month != 'All':  # Fetch everything unless the month is specific
-                        dls = dls.filter(GA_Stat.period_name==month)
-                    downloads = 0
-                    for x in dls:
-                        downloads += int(x.value)
+                    downloads = download_stats.get(package.name, 0)
                 else:
                     downloads = 'No data'
                 top_packages.append((package, entry.pageviews, entry.visits, downloads))
