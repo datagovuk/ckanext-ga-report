@@ -122,9 +122,14 @@ class Identifier:
             dataset_ref = dataset_match.groups()[0]
             dataset = model.Package.get(dataset_ref)
             if dataset:
-                publisher_groups = dataset.get_groups('organization')
-                if publisher_groups:
-                    return dataset_ref, publisher_groups[0].name
+                if hasattr(dataset, 'owner_org'):
+                    # CKAN 2+
+                    org = model.Group.get(dataset.owner_org)
+                    org_name = org.name if org else None
+                else:
+                    publisher_groups = dataset.get_groups('organization')
+                    org_name = publisher_groups[0].name if publisher_groups else None
+                return dataset_ref, org_name
             return dataset_ref, None
         else:
             publisher_match = Identifier.publisher_re.match(url)
