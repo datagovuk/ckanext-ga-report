@@ -114,6 +114,16 @@ class Identifier:
         Identifier.dataset_re = re.compile('/dataset/([^/]+)(/.*)?')
         Identifier.publisher_re = re.compile('/publisher/([^/]+)(/.*)?')
 
+    def get_package(self, url):
+        # e.g. /dataset/fuel_prices
+        # e.g. /dataset/fuel_prices/resource/e63380d4
+        dataset_match = Identifier.dataset_re.match(url)
+        if dataset_match:
+            dataset_ref = dataset_match.groups()[0]
+        else:
+            dataset_ref = None
+        return dataset_ref
+
     def get_package_and_publisher(self, url):
         # e.g. /dataset/fuel_prices
         # e.g. /dataset/fuel_prices/resource/e63380d4

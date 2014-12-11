@@ -243,7 +243,9 @@ class DownloadAnalytics(object):
         start_date = '%s-01' % period_name
         end_date = '%s-%s' % (period_name, last_day_of_month)
         funcs = ['_totals_stats', '_social_stats', '_os_stats',
-                 '_locale_stats', '_browser_stats', '_mobile_stats', '_download_stats']
+                 '_locale_stats', '_browser_stats', '_mobile_stats',
+                 '_download_stats'
+                 ]
         for f in funcs:
             log.info('Downloading analytics for %s' % f.split('_')[1])
             getattr(self, f)(start_date, end_date, period_name, period_complete_day)
@@ -265,7 +267,7 @@ class DownloadAnalytics(object):
             data = self._get_ga_data_simple(params)
         except DownloadError:
             log.info('Will retry requests after a pause')
-            time.sleep(60)
+            time.sleep(300)
             try:
                 data = self._get_ga_data_simple(params)
             except DownloadError:
@@ -382,8 +384,8 @@ class DownloadAnalytics(object):
         ga_model.update_sitewide_stats(period_name, "Totals", data, period_complete_day)
 
         # Bounces from / or another configurable page.
-        path = '~(/%s)?%s' % (config.get('googleanalytics.account'),
-                              config.get('ga-report.bounce_url', '/'))
+        path = '/%s%s' % (config.get('googleanalytics.account'),
+                          config.get('ga-report.bounce_url', '/'))
 
         try:
             args = {}
@@ -450,9 +452,9 @@ class DownloadAnalytics(object):
 
     def _download_stats(self, start_date, end_date, period_name, period_complete_day):
         """ Fetches stats about data downloads """
-        import ckan.model as model
 
         data = {}
+        identifier = ga_model.Identifier()
 
         try:
             args = {}
@@ -462,8 +464,9 @@ class DownloadAnalytics(object):
             args["ids"] = "ga:" + self.profile_id
 
             args["filters"] = 'ga:eventAction==download'
-            args["dimensions"] = "ga:eventLabel"
+            args["dimensions"] = "ga:pagePath"
             args["metrics"] = "ga:totalEvents"
+            args["sort"] = "-ga:totalEvents"
             args["alt"] = "json"
 
             results = self._get_ga_data(args)
@@ -478,55 +481,41 @@ class DownloadAnalytics(object):
             log.info("There is no download data for this time period")
             return
 
-        def process_result_data(result_data, cached=False):
-            progress_total = len(result_data)
-            progress_count = 0
+        def process_result_data(result_data):
             resources_not_matched = []
-            if self.print_progress:
-                progress_bar = GaProgressBar(progress_total)
             for result in result_data:
-                progress_count += 1
-                if self.print_progress:
-                    progress_bar.update(progress_count)
-                url = result[0].strip()
-
+                page_path, total_events = result
+                #e.g. page=u'/data.gov.uk/dataset/road-accidents-safety-data'
+                page_path = strip_off_host_prefix(page_path)  # strips off domain
                 # Get package id associated with the resource that has this URL.
-                q = model.Session.query(model.Resource)
-                if cached:
-                    r = q.filter(model.Resource.cache_url.like("%s%%" % url)).first()
-                else:
-                    r = q.filter(model.Resource.url.like("%s%%" % url)).first()
-
-                package_name = r.resource_group.package.name if r else ""
+                package_name = identifier.get_package(page_path)
                 if package_name:
-                    data[package_name] = data.get(package_name, 0) + int(result[1])
+                    data[package_name] = data.get(package_name, 0) + int(total_events)
                 else:
-                    resources_not_matched.append(url)
+                    resources_not_matched.append(page_path)
                     continue
             if resources_not_matched:
                 log.debug('Could not match %i of %i resource URLs to datasets. e.g. %r',
-                          len(resources_not_matched), progress_total, resources_not_matched[:3])
+                          len(resources_not_matched), len(result_data), resources_not_matched[:3])
 
         log.info('Associating downloads of resource URLs with their respective datasets')
         process_result_data(results.get('rows'))
 
         try:
-            args = dict( ids='ga:' + self.profile_id,
-                         filters='ga:eventAction==download-cache',
-                         metrics='ga:totalEvents',
-                         sort='-ga:totalEvents',
-                         dimensions="ga:eventLabel",
-                         max_results=10000)
-            args['start-date'] = start_date
-            args['end-date'] = end_date
+            args['filters'] = 'ga:eventAction==download-cache'
 
             results = self._get_ga_data(args)
         except Exception, e:
             log.exception(e)
             results = dict(url=[])
-
-        log.info('Associating downloads of cache resource URLs with their respective datasets')
-        process_result_data(results.get('rows'), cached=False)
+        result_data = results.get('rows')
+        if not result_data:
+            # We may not have data for this time period, so we need to bail
+            # early.
+            log.info("There is no cached download data for this time period")
+            return
+        log.info('Associating cached downloads of resource URLs with their respective datasets')
+        process_result_data(results.get('rows'))
 
         self._filter_out_long_tail(data, MIN_DOWNLOADS)
         ga_model.update_sitewide_stats(period_name, "Downloads", data, period_complete_day)
