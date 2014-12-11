@@ -7,14 +7,12 @@ import re
 
 from pylons import config
 import ga_model
-from lib import GaProgressBar
 
 log = __import__('logging').getLogger(__name__)
 
 FORMAT_MONTH = '%Y-%m'
 MIN_VIEWS = 50
 MIN_VISITS = 20
-MIN_DOWNLOADS = 10
 
 
 class DownloadAnalytics(object):
@@ -517,7 +515,6 @@ class DownloadAnalytics(object):
         log.info('Associating cached downloads of resource URLs with their respective datasets')
         process_result_data(results.get('rows'))
 
-        self._filter_out_long_tail(data, MIN_DOWNLOADS)
         ga_model.update_sitewide_stats(period_name, "Downloads", data, period_complete_day)
 
     def _social_stats(self, start_date, end_date, period_name, period_complete_day):
