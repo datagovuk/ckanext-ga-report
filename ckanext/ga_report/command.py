@@ -105,16 +105,17 @@ class LoadAnalytics(CkanCommand):
 
     def __init__(self, name):
         super(LoadAnalytics, self).__init__(name)
+        self.stat_names = ('url', 'url-all', 'sitewide', 'social')
         self.parser.add_option('-d', '--delete-first',
                                action='store_true',
                                default=False,
                                dest='delete_first',
                                help='Delete data for the period first')
-        self.parser.add_option('-s', '--skip_url_stats',
-                               action='store_true',
-                               default=False,
-                               dest='skip_url_stats',
-                               help='Skip the download of URL data - just do site-wide stats')
+        self.parser.add_option('-s', '--stat',
+                               metavar="STAT",
+                               dest='stat',
+                               help='Only calulcate a particular stat (or collection of stats)- one of: %s' %
+                                    '|'.join(self.stat_names))
         self.token = ""
 
     def command(self):
@@ -139,7 +140,7 @@ class LoadAnalytics(CkanCommand):
 
         downloader = DownloadAnalytics(svc, self.token, profile_id=get_profile_id(svc),
                                        delete_first=self.options.delete_first,
-                                       skip_url_stats=self.options.skip_url_stats,
+                                       stat=self.options.stat,
                                        print_progress=True)
 
         time_period = self.args[0] if self.args else 'latest'

@@ -19,12 +19,12 @@ class DownloadAnalytics(object):
     '''Downloads and stores analytics info'''
 
     def __init__(self, service=None, token=None, profile_id=None, delete_first=False,
-                 skip_url_stats=False, print_progress=False):
+                 stat=None, print_progress=False):
         self.period = config['ga-report.period']
         self.service = service
         self.profile_id = profile_id
         self.delete_first = delete_first
-        self.skip_url_stats = skip_url_stats
+        self.stat = stat
         self.token = token
         self.print_progress = print_progress
 
@@ -109,7 +109,7 @@ class DownloadAnalytics(object):
                          period_name)
                 ga_model.delete(period_name)
 
-            if not self.skip_url_stats:
+            if self.stat in (None, 'url'):
                 # Clean out old url data before storing the new
                 ga_model.pre_update_url_stats(period_name)
 
@@ -139,23 +139,29 @@ class DownloadAnalytics(object):
                 log.info('Storing publisher views (%i rows)', len(data.get('url')))
                 self.store(period_name, period_complete_day, data,)
 
-                # Make sure the All records are correct.
-                ga_model.post_update_url_stats(print_progress=self.print_progress)
+                # Create the All records
+                ga_model.post_update_url_stats()
 
                 log.info('Associating datasets with their publisher')
                 ga_model.update_publisher_stats(period_name) # about 30 seconds.
 
-            # Clean out old ga_stats data before storing the new
-            ga_model.pre_update_sitewide_stats(period_name)
+            if self.stat == 'url-all':
+                # This stat is split off just for test purposes
+                ga_model.post_update_url_stats()
 
-            log.info('Downloading and storing analytics for site-wide stats')
-            self.sitewide_stats(period_name, period_complete_day)
+            if self.stat in (None, 'sitewide'):
+                # Clean out old ga_stats data before storing the new
+                ga_model.pre_update_sitewide_stats(period_name)
 
-            # Clean out old ga_stats data before storing the new
-            ga_model.pre_update_social_stats(period_name)
+                log.info('Downloading and storing analytics for site-wide stats')
+                self.sitewide_stats(period_name, period_complete_day)
 
-            log.info('Downloading and storing analytics for social networks')
-            self.update_social_info(period_name, start_date, end_date)
+            if self.stat in (None, 'social'):
+                # Clean out old ga_stats data before storing the new
+                ga_model.pre_update_social_stats(period_name)
+
+                log.info('Downloading and storing analytics for social networks')
+                self.update_social_info(period_name, start_date, end_date)
 
     def update_social_info(self, period_name, start_date, end_date):
         start_date = start_date.strftime('%Y-%m-%d')
@@ -188,7 +194,8 @@ class DownloadAnalytics(object):
         ga_model.update_social(period_name, data)
 
     def download(self, start_date, end_date, path=None):
-        '''Get data from GA for a given time period'''
+        '''Get views & visits data for particular paths & time period from GA
+        '''
         start_date = start_date.strftime('%Y-%m-%d')
         end_date = end_date.strftime('%Y-%m-%d')
         query = 'ga:pagePath=%s$' % path

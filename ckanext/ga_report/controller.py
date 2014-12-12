@@ -338,7 +338,7 @@ class GaDatasetReport(BaseController):
 
         q = model.Session.query(GA_Url,model.Package)\
             .filter(model.Package.name==GA_Url.package_id)\
-            .filter(GA_Url.url.like('/dataset/%'))
+            .filter(GA_Url.package_id != '')
         if publisher:
             q = q.filter(GA_Url.department_id==publisher.name)
         q = q.filter(GA_Url.period_name==month)
@@ -485,7 +485,6 @@ def _get_top_publishers(limit=20):
         from ga_url
         where department_id <> ''
           and package_id <> ''
-          and url like '/dataset/%%'
           and period_name=%s
         group by department_id order by views desc
         """
@@ -512,7 +511,6 @@ def _get_top_publishers_graph(limit=20):
         from ga_url
         where department_id <> ''
           and package_id <> ''
-          and url like '/dataset/%%'
           and period_name='All'
         group by department_id order by views desc
         """

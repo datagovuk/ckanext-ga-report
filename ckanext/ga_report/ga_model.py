@@ -125,8 +125,10 @@ class Identifier:
         return dataset_ref
 
     def get_package_and_publisher(self, url):
-        # e.g. /dataset/fuel_prices
-        # e.g. /dataset/fuel_prices/resource/e63380d4
+        # Example urls:
+        #       /dataset/fuel_prices
+        #       /dataset/d7fc8964-e9da-42ab-8385-cbac70479f4b
+        #       /dataset/fuel_prices/resource/e63380d4
         dataset_match = Identifier.dataset_re.match(url)
         if dataset_match:
             dataset_ref = dataset_match.groups()[0]
@@ -139,7 +141,7 @@ class Identifier:
                 else:
                     publisher_groups = dataset.get_groups('organization')
                     org_name = publisher_groups[0].name if publisher_groups else None
-                return dataset_ref, org_name
+                return dataset.name, org_name
             return dataset_ref, None
         else:
             publisher_match = Identifier.publisher_re.match(url)
@@ -178,18 +180,13 @@ def pre_update_url_stats(period_name):
     log.debug("Deleting %d '%s' URL records" % (q.count(), period_name))
     q.delete()
 
-    q = model.Session.query(GA_Url).\
-        filter(GA_Url.period_name == 'All')
-    log.debug("Deleting %d 'All' URL records..." % q.count())
-    q.delete()
-
     model.Session.flush()
     model.Session.commit()
     model.repo.commit_and_remove()
     log.debug('...done')
 
 
-def post_update_url_stats(print_progress=False):
+def post_update_url_stats():
 
     """ Check the distinct url field in ga_url and make sure
         it has an All record.  If not then create one.
@@ -198,43 +195,66 @@ def post_update_url_stats(print_progress=False):
         record regardless of whether the URL has an entry for
         the month being currently processed.
     """
-    log.debug('Post-processing "All" records...')
-    query = """select url, pageviews::int, visits::int
+    q = model.Session.query(GA_Url).\
+        filter_by(period_name='All')
+    log.debug("Deleting %d 'All' URL records..." % q.count())
+    q.delete()
+
+    # For dataset URLs:
+    # Calculate the total views/visits for All months
+    log.debug('Calculating Dataset "All" records')
+    query = '''select package_id, sum(pageviews::int), sum(visits::int)
                from ga_url
-               where url not in (select url from ga_url where period_name ='All')"""
-    connection = model.Session.connection()
-    res = connection.execute(query)
-
-    views, visits = {}, {}
-    # url, views, visits
-    for row in res:
-        views[row[0]] = views.get(row[0], 0) + row[1]
-        visits[row[0]] = visits.get(row[0], 0) + row[2]
-
-    progress_total = len(views.keys())
-    progress_count = 0
-    if print_progress:
-        progress_bar = GaProgressBar(progress_total)
-    identifier = Identifier()
-    for key in views.keys():
-        progress_count += 1
-        if print_progress:
-            progress_bar.update(progress_count)
-
-        package, publisher = identifier.get_package_and_publisher(key)
-
+               where package_id != ''
+               group by package_id
+               order by sum(pageviews::int) desc
+               '''
+    res = model.Session.execute(query).fetchall()
+    # Now get the link between dataset and org as the previous
+    # query doesn't return that
+    package_to_org = \
+        model.Session.query(GA_Url.package_id, GA_Url.department_id)\
+             .filter(GA_Url.package_id != None)\
+             .group_by(GA_Url.package_id, GA_Url.department_id)\
+             .all()
+    package_to_org = dict(package_to_org)
+    for package_id, views, visits in res:
         values = {'id': make_uuid(),
                   'period_name': "All",
                   'period_complete_day': 0,
-                  'url': key,
-                  'pageviews': views[key],
-                  'visits': visits[key],
-                  'department_id': publisher,
-                  'package_id': package
+                  'url': '',
+                  'pageviews': views,
+                  'visits': visits,
+                  'department_id': package_to_org.get(package_id, ''),
+                  'package_id': package_id
+                  }
+        model.Session.add(GA_Url(**values))
+
+    # For non-dataset URLs:
+    # Calculate the total views/visits for All months
+    log.debug('Calculating URL "All" records...')
+    query = '''select url, sum(pageviews::int), sum(visits::int)
+               from ga_url
+               where package_id = ''
+               group by url
+               order by sum(pageviews::int) desc
+            '''
+    res = model.Session.execute(query).fetchall()
+
+    for url, views, visits in res:
+        values = {'id': make_uuid(),
+                  'period_name': "All",
+                  'period_complete_day': 0,
+                  'url': url,
+                  'pageviews': views,
+                  'visits': visits,
+                  'department_id': '',
+                  'package_id': ''
                   }
         model.Session.add(GA_Url(**values))
     model.Session.commit()
-    log.debug('..done')
+
+    log.debug('Done URL "All" records')
 
 
 def update_url_stats(period_name, period_complete_day, url_data,
