@@ -44,13 +44,13 @@ ckan.template_footer_end =   <script type="text/javascript">
  </script>
 ```
 
-Notes:
+  Notes:
 
-* There is a space at the start of every line apart from the first. This is required for the config file format, to attach multiple lined values to an option.
+  * There is a space at the start of every line apart from the first. This is required for the config file format, to attach multiple lined values to an option.
 
   * If copying into your config, remember to adjust the Tracking ID to be your own one.
 
-* This particular snippet is the one for the 'Universal Analytics' version of Google Analytics, and changes with different versions. If you are unsure, find the tracking code that you need using the Google Analytics web interface: https://support.google.com/analytics/answer/1008080?hl=en BUT remember to add the spaces at the start of each line when you paste it into your config file.
+  * This particular snippet is the one for the 'Universal Analytics' version of Google Analytics, and changes with different versions. If you are unsure, find the tracking code that you need using the Google Analytics web interface: https://support.google.com/analytics/answer/1008080?hl=en BUT remember to add the spaces at the start of each line when you paste it into your config file.
 
 4. Deploy to your website, check the tracking code snippet is appearing in your page source and click on a few pages to create some initial traffic. You'll have to wait up to 24 hours to see the traffic appearing in the Google Analytics web pages.
 
@@ -59,13 +59,15 @@ Installation
 ------------
 
 1. Activate you CKAN python environment and install this extension's software:
-
-    $ pyenv/bin/activate
-    $ pip install -e  git+https://github.com/datagovuk/ckanext-ga-report.git#egg=ckanext-ga-report
+```
+$ pyenv/bin/activate
+$ pip install -e  git+https://github.com/datagovuk/ckanext-ga-report.git#egg=ckanext-ga-report
+```
 
 2. Install Google's library:
-
-    $ pip install google-api-python-client
+```
+$ pip install google-api-python-client
+```
 
 3. Ensure you development.ini (or similar) contains the info about your Google Analytics account and configuration:
 
@@ -80,13 +82,14 @@ ga-report.bounce_url = /
    The ga-report.bounce_url specifies a particular path to record the bounce rate for. Typically it is / (the home page).
 
 4. Set up this extension's database tables using a paster command. (Ensure your CKAN pyenv is still activated, run the command from ``src/ckanext-ga-report``, alter the ``--config`` option to point to your site config file):
-
-    $ paster initdb --config=../ckan/development.ini
+```
+$ paster initdb --config=../ckan/development.ini
+```
 
 5. Enable the extension in your CKAN config file by adding it to ``ckan.plugins``:
-
-    ckan.plugins = ga-report
-
+```
+ckan.plugins = ga-report
+```
 
 Problem shooting
 ----------------
@@ -98,17 +101,18 @@ Problem shooting
 Authorization
 --------------
 
-Before you can access the data, you need to create an OAUTH token, which you can do by following the `instructions <https://developers.google.com/analytics/resources/tutorials/hello-analytics-api>`_ the outcome of which will be a file called credentials.json which should look like credentials.json.template with the relevant fields completed. The steps are listed below for convenience.
+Before you can access the data, you need to create an OAUTH token, which you can do by following the [instructions](https://developers.google.com/analytics/resources/tutorials/hello-analytics-api) the outcome of which will be a file called credentials.json which should look like credentials.json.template with the relevant fields completed. The steps are listed below for convenience.
 
 NB You can do this all conveniently on your local computer and when you have created the token file you can copy it to your CKAN server for use.
 
-1. Visit the (Google APIs Console)[https://code.google.com/apis/console]
+1. Visit the [Google APIs Console](https://code.google.com/apis/console)
 
 2. Sign-in and create a project or use an existing project.
 
-3. In the (Services pane)[https://code.google.com/apis/console#:services] , activate Analytics API for your project. If prompted, read and accept the terms of service.
+3. In the [Services pane](https://code.google.com/apis/console#:services) , activate Analytics API for your project. If prompted, read and accept the terms of service.
 
-4. Go to the (API Access pane)[https://code.google.com/apis/console/#:access]
+
+4. Go to the [API Access pane](https://code.google.com/apis/console/#:access)
 
 5. Click Create an OAuth 2.0 client ID....
 
