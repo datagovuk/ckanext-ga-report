@@ -20,8 +20,7 @@ def _prepare_credentials(token_filename, credentials_filename):
 
     if credentials is None or credentials.invalid:
         flow = flow_from_clientsecrets(credentials_filename,
-                scope='https://www.googleapis.com/auth/analytics.readonly',
-                message="Can't find the credentials file")
+            scope='https://www.googleapis.com/auth/analytics.readonly')
         credentials = run(flow, storage)
 
     return credentials

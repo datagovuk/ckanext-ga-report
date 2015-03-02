@@ -31,17 +31,19 @@ class InitDB(CkanCommand):
 
 
 class GetAuthToken(CkanCommand):
-    """ Get's the Google auth token
+    """ Gets the auth token from Google and saves it as token.dat.
 
     Usage: paster getauthtoken <credentials_file>
 
     Where <credentials_file> is the file name containing the details
-    for the service (obtained from https://code.google.com/apis/console).
+    of your client authorized for your Google Analytics data
+    (known as credentials.json or client_secrets.json)
+    which is obtained from https://code.google.com/apis/console.
     By default this is set to credentials.json
     """
     summary = __doc__.split('\n')[0]
     usage = __doc__
-    max_args = 0
+    max_args = 1
     min_args = 0
 
     def command(self):

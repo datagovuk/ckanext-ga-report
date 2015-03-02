@@ -101,35 +101,51 @@ Problem shooting
 Authorization
 --------------
 
-Before you can access the data, you need to create an OAUTH token, which you can do by following the [instructions](https://developers.google.com/analytics/resources/tutorials/hello-analytics-api) the outcome of which will be a file called credentials.json which should look like credentials.json.template with the relevant fields completed. The steps are listed below for convenience.
+Before you can access the data, you need to create an OAUTH token of type "Installed application", which you can do by following the [instructions](https://developers.google.com/analytics/resources/tutorials/hello-analytics-api) the outcome of which will be a file called credentials.json (also known as client_secrets.json) which should look like credentials.json.template only with the relevant fields completed. The steps are listed below for convenience.
 
-NB You can do this all conveniently on your local computer and when you have created the token file you can copy it to your CKAN server for use.
+1. Visit the [Google APIs Console](https://code.google.com/apis/console) using a Google account that has access to the Google Analytics for your project. (That Google user has a quota of API requests and has the power to revoke API access via the token associated.) You may have to accept the Terms of Service at this point.
 
-1. Visit the [Google APIs Console](https://code.google.com/apis/console)
+2. Create a project or use an existing project.
 
-2. Sign-in and create a project or use an existing project.
-
-3. In the [Services pane](https://code.google.com/apis/console#:services) , activate Analytics API for your project. If prompted, read and accept the terms of service.
-
+3. In the [Services pane](https://code.google.com/apis/console#:services), activate "Analytics API" for your project.
 
 4. Go to the [API Access pane](https://code.google.com/apis/console/#:access)
 
-5. Click Create an OAuth 2.0 client ID....
+5. Click "Create new Client ID"
 
-6. Fill out the Branding Information fields and click Next.
+6. Select type "Installed application" (in this context, 'ckanext-ga-report' is the application)
 
-7. In Client ID Settings, set Application type to Installed application.
+7. Now shown the "Consent screen", you only need to provide the Product Name (ckanext-ga-report although it is not important).
 
-8. Click Create client ID
+8. In the "Create Client ID" dialog again you need to select "Installed application" and type "Other"
 
-9. The details you need below are Client ID, Client secret, and  Redirect URIs
+9. It will now show the information that go into credentials.json: Client ID, Client secret, and Redirect URIs. You can click "Download JSON" to save it. Now rename the file to credentials.json.
 
+10. This paster command should be run on any machine with ckanext-ga-report installed and the credentials.json file at hand:
 
-Once you have set up your credentials.json file you can generate an oauth token file by using the following command, which will store your oauth token in a file called token.dat once you have finished giving permission in the browser:
+        $ paster --plugin=ckanext-ga-report getauthtoken credentials.json --config=../ckan/development.ini
 
-    $ paster getauthtoken --config=../ckan/development.ini
+    This will try to start a web browser at a URL like this:
 
-Now ensure you reference the correct path to your token.dat in your CKAN config file (e.g. development.ini)::
+        https://accounts.google.com/o/oauth2/auth?scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fanalytics.readonly&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2F&response_type=code&client_id=769797987376-tj82tp3ttp5guhiioyi6jneecd7mj5g.apps.googleusercontent.com&access_type=offline
+
+    If you are running it on a server or VM without a browser then you can simply copy & paste that URL into a local web browser.
+
+11. The web page asks you to log-in to Google - use the same account you created the credentials with earlier.
+
+12. In the browser it now asks "ckanext-ga-report would like to view your Google Analytics data". Click "Accept".
+
+13. Your browser will now be redirected to something like:
+
+        http://localhost:8080/?code=4/Com0kAHaio858diw2dv70u3rhjwkjsduofyzj0.g8f93jd889sjsj29d-If93
+
+    If you are in a browser that is not on the same machine as the paster command than you will see a browser error. In this case you need to resolve that URL on the machine where the paster command is running (but in a new terminal):
+
+        curl http://localhost:8080/?code=4/Com0kAHaio858diw2dv70u3rhjwkjsduofyzj0.g8f93jd889sjsj29d-If93
+
+    The paster window should now say "Authentication successful" and the token.dat file will be created.
+
+14. Now ensure you reference the correct path to your token.dat in your CKAN config file (e.g. development.ini)::
 
     googleanalytics.token.filepath = ~/pyenv/token.dat
 
