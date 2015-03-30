@@ -1,19 +1,26 @@
 import logging
 import ckan.lib.helpers as h
 import ckan.plugins as p
-from ckan.plugins import implements, toolkit
+from ckan.plugins import toolkit
 
 from ckanext.ga_report.helpers import (most_popular_datasets,
                                        popular_datasets,
                                        single_popular_dataset,
                                        month_option_title)
+try:
+    from ckanext.report.interfaces import IReport
+except ImportError:
+    # if you've not install ckanext-report then you just find you can't use the report.
+    IReport = p.ITemplateHelpers
 
 log = logging.getLogger('ckanext.ga-report')
 
+
 class GAReportPlugin(p.SingletonPlugin):
-    implements(p.IConfigurer, inherit=True)
-    implements(p.IRoutes, inherit=True)
-    implements(p.ITemplateHelpers, inherit=True)
+    p.implements(p.IConfigurer, inherit=True)
+    p.implements(p.IRoutes, inherit=True)
+    p.implements(p.ITemplateHelpers, inherit=True)
+    p.implements(IReport)
 
     def update_config(self, config):
         toolkit.add_template_directory(config, 'templates')
@@ -83,3 +90,9 @@ class GAReportPlugin(p.SingletonPlugin):
         )
         return map
 
+    # IReport
+
+    def register_reports(self):
+        """Register details of an extension's reports"""
+        from ckanext.ga_report import reports
+        return [reports.publisher_report_info]

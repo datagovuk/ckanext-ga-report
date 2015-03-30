@@ -496,5 +496,5 @@ def get_score_for_dataset(dataset_name):
             score += views_per_day
 
     score = int(score * 100)
-    log.debug('Popularity %s: %s', score, dataset_name)
+    #log.debug('Popularity %s: %s', score, dataset_name)
     return score
