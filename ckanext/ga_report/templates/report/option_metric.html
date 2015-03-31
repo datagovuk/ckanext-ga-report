@@ -1,0 +1,15 @@
+{#
+Option snippet - metric
+value - Value of this option
+default - Default value for this option
+#}
+<div class="form-select form-group">
+   <label for="option-metric"> {{ _('Metric:') }} </label>
+   <select id="option-metric" name="metric" class="inline js-auto-submit">
+     {% set selected_value = value or default %}
+     {% set options = (('views', 'Views (Pageviews)'), ('visits', 'Visits'), ('downloads', 'Downloads'), ('viewsdownloads', 'Views + Downloads')) %}
+     {% for name, title in options %}
+       <option value="{{name}}" {% if value == name %}selected="selected"{% endif %}>{{ title }}</option>
+     {% endfor %}
+   </select>
+</div>

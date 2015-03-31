@@ -317,7 +317,7 @@ class GaDatasetReport(BaseController):
         graph_data = _get_top_publishers_graph()
         c.top_publishers_graph = json.dumps( _to_rickshaw(graph_data) )
 
-        x =  render('ga_report/publisher/index.html')
+        x = render('ga_report/publisher/index.html')
 
         return x
 

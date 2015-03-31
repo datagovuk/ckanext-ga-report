@@ -9,33 +9,53 @@ from ckanext.dgu.lib.publisher import go_up_tree
 from ga_model import GA_Url  # , GA_Stat, GA_ReferralStat, GA_Publisher
 
 
-def publisher_report(metric='views'):
-    q = '''
-        select department_id, period_name, %s metric
-        from ga_url
-        where department_id <> ''
-          and package_id <> ''
-        group by department_id, period_name
-        order by department_id
-    '''
+def publisher_report(metric):
     orgs = dict(model.Session.query(model.Group.name, model.Group).all())
 
-    if metric == 'views':
-        sqla_function = func.sum(GA_Url.pageviews)
-        sql_function = 'sum(pageviews::int)'
-    elif metric == 'visits':
-        sqla_function = func.sum(GA_Url.visits)
-        sql_function = 'sum(visits::int)'
-    elif metric == 'downloads':
-        sqla_function = func.sum(GA_Url.downloads)
-    elif metric == 'viewsdownloads':
-        sqla_function = func.sum(GA_Url.downloads)
-
-    org_period_count = model.Session.connection().execute(q % sql_function)
-
     org_counts = collections.defaultdict(dict)
-    for org_name, period_name, count in org_period_count:
-        org_counts[org_name][period_name] = count
+    if metric in ('views', 'viewsdownloads', 'visits'):
+        if metric == 'views' or metric == 'viewsdownloads':
+            sql_function = 'sum(pageviews::int)'
+        elif metric == 'visits':
+            sql_function = 'sum(visits::int)'
+        q = '''
+            select department_id, period_name, %s metric
+            from ga_url
+            where department_id <> ''
+            and package_id <> ''
+            group by department_id, period_name
+            order by department_id
+        ''' % sql_function
+
+        org_period_count = model.Session.connection().execute(q)
+
+        for org_name, period_name, count in org_period_count:
+            org_counts[org_name][period_name] = count
+
+    if metric in ('downloads', 'viewsdownloads'):
+        q = '''
+            select g.name as org_name, s.period_name, sum(s.value::int) as downloads
+            from GA_Stat as s
+            join Package as p on s.key=p.name
+            join "group" as g on p.owner_org=g.id
+            where stat_name='Downloads'
+            group by org_name, s.period_name
+            order by downloads desc;
+            '''
+        org_period_count = model.Session.connection().execute(q)
+
+        if metric == 'viewsdownloads':
+            # add it onto the existing counts
+            for org_name, period_name, count in org_period_count:
+                org_counts[org_name][period_name] = count + \
+                    org_counts[org_name].get(period_name, 0)
+                org_counts[org_name]['All'] = count + \
+                    org_counts[org_name].get('All', 0)
+        else:
+            for org_name, period_name, count in org_period_count:
+                org_counts[org_name][period_name] = count
+                org_counts[org_name]['All'] = count + \
+                    org_counts[org_name].get('All', 0)
 
     org_counts = sorted(org_counts.items(),
                         key=lambda x: -x[1].get('All', 0))
@@ -75,13 +95,16 @@ def publisher_report(metric='views'):
             #'all periods by year': all_periods_by_year
             }
 
+def publisher_report_option_combinations():
+    return ({'metric': metric}
+            for metric in ('views', 'visits', 'downloads', 'viewsdownloads'))
 
 publisher_report_info = {
     'name': 'site-usage-publisher',
     'title': 'Site usage by publisher',
     'description': 'Usage statistics, by publisher for each month. Data is from Google Analytics.',
-    'option_defaults': None,
-    'option_combinations': None,
+    'option_defaults': OrderedDict([('metric', 'views')]),
+    'option_combinations': publisher_report_option_combinations,
     'generate': publisher_report,
     'template': 'report/publisher.html',
     }
