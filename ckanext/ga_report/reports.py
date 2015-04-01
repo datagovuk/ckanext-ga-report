@@ -10,7 +10,8 @@ from ga_model import GA_Url  # , GA_Stat, GA_ReferralStat, GA_Publisher
 
 
 def publisher_report(metric):
-    orgs = dict(model.Session.query(model.Group.name, model.Group).all())
+    orgs = dict(model.Session.query(model.Group.name, model.Group)\
+                     .filter_by(state='active').all())
 
     org_counts = collections.defaultdict(dict)
     if metric in ('views', 'viewsdownloads', 'visits'):
@@ -39,6 +40,7 @@ def publisher_report(metric):
             join Package as p on s.key=p.name
             join "group" as g on p.owner_org=g.id
             where stat_name='Downloads'
+            where g.state='active'
             group by org_name, s.period_name
             order by downloads desc;
             '''
