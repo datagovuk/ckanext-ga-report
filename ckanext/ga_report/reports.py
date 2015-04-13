@@ -40,7 +40,7 @@ def publisher_report(metric):
             join Package as p on s.key=p.name
             join "group" as g on p.owner_org=g.id
             where stat_name='Downloads'
-            where g.state='active'
+            and g.state='active'
             group by org_name, s.period_name
             order by downloads desc;
             '''
