@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-import sys, os
 
 version = '0.1'
 
@@ -21,7 +20,6 @@ setup(
 	zip_safe=False,
 	install_requires=[
 		'gdata',
-		'google-api-python-client'
 	],
 	entry_points=\
 	"""

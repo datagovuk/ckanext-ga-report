@@ -64,9 +64,9 @@ $ pyenv/bin/activate
 $ pip install -e  git+https://github.com/datagovuk/ckanext-ga-report.git#egg=ckanext-ga-report
 ```
 
-2. Install Google's library:
+2. Install dependencies (e.g. Google's python client library):
 ```
-$ pip install google-api-python-client
+$ pip install -r ckanext-ga-report/requirements.txt
 ```
 
 3. Ensure you development.ini (or similar) contains the info about your Google Analytics account and configuration:
