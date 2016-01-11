@@ -317,9 +317,7 @@ class GaDatasetReport(BaseController):
         graph_data = _get_top_publishers_graph()
         c.top_publishers_graph = json.dumps( _to_rickshaw(graph_data) )
 
-        x = render('ga_report/publisher/index.html')
-
-        return x
+        return render('ga_report/publisher/index.html')
 
     def _get_packages(self, publisher=None, month='', count=-1):
         '''Returns the datasets in order of views'''

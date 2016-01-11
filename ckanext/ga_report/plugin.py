@@ -6,7 +6,8 @@ from ckan.plugins import toolkit
 from ckanext.ga_report.helpers import (most_popular_datasets,
                                        popular_datasets,
                                        single_popular_dataset,
-                                       month_option_title)
+                                       month_option_title,
+                                       join_x, join_y)
 try:
     from ckanext.report.interfaces import IReport
 except ImportError:
@@ -36,7 +37,9 @@ class GAReportPlugin(p.SingletonPlugin):
             'popular_datasets': popular_datasets,
             'most_popular_datasets': most_popular_datasets,
             'single_popular_dataset': single_popular_dataset,
-            'month_option_title': month_option_title
+            'month_option_title': month_option_title,
+            'join_x': join_x,
+            'join_y': join_y,
         }
 
     def after_map(self, map):
