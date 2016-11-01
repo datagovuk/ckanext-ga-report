@@ -28,7 +28,7 @@
         {% with download_link=h.url_for(controller='ckanext.ga_report.controller:GaReport',action='csv',month=c.month or 'all') %}
           <a class="btn button btn-primary btn-sm pull-right" href="{{download_link}}"><i class="icon-download"></i>&nbsp; Download as CSV</a>
         {% endwith %}
-        <h1>Site Usage</h1>
+        <h1>{{g.site_title.capitalize()}} Usage</h1>
       </div>
       <div class="col-sm-5 col-md-4 col-lg-3">
         <div class="panel panel-default">

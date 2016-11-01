@@ -32,7 +32,7 @@
   {% set download_link=h.url_for(controller='ckanext.ga_report.controller:GaDatasetReport',action='dataset_csv',id=c.publisher_name or 'all',month=c.month or 'all')%}
       <a class="btn button btn-primary btn-sm pull-right" href="{{download_link}}"><i class="icon-download"></i>&nbsp; Download as CSV</a>
 
-    <h1>Site Usage
+    <h1>{{g.site_title.capitalize()}} Usage
         {% if c.publisher %}
           <small>{{c.publisher.title}}</small>
         {% else %}
