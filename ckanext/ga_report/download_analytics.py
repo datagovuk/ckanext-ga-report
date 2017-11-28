@@ -371,7 +371,7 @@ class DownloadAnalytics(object):
             args["end-date"] = end_date
             args["ids"] = "ga:" + self.profile_id
 
-            args["metrics"] = "ga:pageviewsPerVisit,ga:avgTimeOnSite,ga:percentNewVisits,ga:visits"
+            args["metrics"] = "ga:pageviewsPerVisit,ga:avgSessionDuration,ga:percentNewVisits,ga:visits"
             args["alt"] = "json"
 
             results = self._get_ga_data(args)
@@ -515,12 +515,10 @@ class DownloadAnalytics(object):
             results = dict(url=[])
         result_data = results.get('rows')
         if not result_data:
-            # We may not have data for this time period, so we need to bail
-            # early.
             log.info("There is no cached download data for this time period")
-            return
-        log.info('Associating cached downloads of resource URLs with their respective datasets')
-        process_result_data(results.get('rows'))
+        else:
+            log.info('Associating cached downloads of resource URLs with their respective datasets')
+            process_result_data(result_data)
 
         ga_model.update_sitewide_stats(period_name, "Downloads", data, period_complete_day)
 
